@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "espn-fantasy-mcp"
+version = "0.1.0"
+description = "MCP server for ESPN Fantasy Sports API"
+authors = [{name = "David Weinstein"}]
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+keywords = ["mcp", "espn", "fantasy", "baseball", "api", "model-context-protocol"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp"
+Repository = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp"
+Issues = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp/issues"
+
+dependencies = [
+    "mcp>=0.9.0",
+    "espn-api>=0.30.0",
+    "python-dotenv>=1.0.0",
+    "rapidfuzz>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+espn-fantasy-mcp = "espn_fantasy_mcp.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
