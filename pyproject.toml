@@ -20,18 +20,17 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-
-[project.urls]
-Homepage = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp"
-Repository = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp"
-Issues = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp/issues"
-
 dependencies = [
     "mcp>=0.9.0",
     "espn-api>=0.30.0",
     "python-dotenv>=1.0.0",
     "rapidfuzz>=3.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp"
+Repository = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp"
+Issues = "https://github.com/i-am-david-weinstein/espn-fantasy-mcp/issues"
 
 [project.optional-dependencies]
 dev = [
