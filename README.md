@@ -14,27 +14,9 @@ NOTE: current support is limited to Fantasy Baseball
 - Access player statistics (actual and projected)
 - View player ownership status (rostered, free agent, waivers)
 
-## Installation
+## Installation and Setup
 
-### From Source (Local Development)
-
-```bash
-# Clone the repository
-git clone https://github.com/i-am-david-weinstein/espn-fantasy-mcp.git
-cd espn-fantasy-mcp
-
-# Install in development mode
-pip install -e .
-```
-
-### From GitHub (via uvx)
-
-```bash
-# Install directly from GitHub
-uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
-```
-
-## Getting ESPN Cookies
+### Step 1: Get ESPN Cookies
 
 To access private leagues, you'll need ESPN authentication cookies:
 
@@ -45,49 +27,156 @@ To access private leagues, you'll need ESPN authentication cookies:
    - `espn_s2` - Long string of characters
    - `SWID` - Format: `{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}` (includes curly braces)
 
-## Configuration
+### Step 2: Configure with Claude Code
 
-### For Local Development with Claude Code
+Add the MCP server to Claude Code using the `claude mcp add` command. The `uvx` tool automatically manages the package installation and virtual environment. You can choose different configuration scopes:
 
-Add the MCP server to your project (run from the `espn-fantasy-mcp` directory):
+#### Local Scope (Private to Current Project)
+
+This stores credentials in `.claude.json` in your current directory (private to you, gitignored):
 
 ```bash
 claude mcp add --transport stdio espn-fantasy \
   --env ESPN_S2=your_espn_s2_cookie \
   --env ESPN_SWID={your_espn_swid_cookie} \
   --env ESPN_LEAGUE_ID=your_league_id \
-  --env ESPN_TEAM_ID=0 \
-  --env ESPN_SEASON_YEAR=2025 \
-  -- python3 -m espn_fantasy_mcp
+  --env ESPN_TEAM_ID=your_team_id \
+  --env ESPN_SEASON_YEAR=2026 \
+  -- uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
+```
+
+#### User Scope (Available Across All Projects)
+
+This stores the configuration globally for your user account:
+
+```bash
+claude mcp add --scope user --transport stdio espn-fantasy \
+  --env ESPN_S2=your_espn_s2_cookie \
+  --env ESPN_SWID={your_espn_swid_cookie} \
+  --env ESPN_LEAGUE_ID=your_league_id \
+  --env ESPN_TEAM_ID=your_team_id \
+  --env ESPN_SEASON_YEAR=2026 \
+  -- uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
+```
+
+#### Project Scope (Shared via Version Control)
+
+This creates `.mcp.json` in your repo root that can be committed and shared with your team. **Do not include sensitive credentials** in this scope:
+
+```bash
+claude mcp add --scope project --transport stdio espn-fantasy \
+  --env ESPN_LEAGUE_ID=your_league_id \
+  --env ESPN_TEAM_ID=your_team_id \
+  --env ESPN_SEASON_YEAR=2026 \
+  -- uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
 ```
 
 **Important:**
 - Replace the placeholder values with your actual ESPN credentials and league information
 - Keep the curly braces in the SWID value: `{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}`
-- This creates a `.claude.json` file in your project with the MCP server configuration
+- No separate installation step needed - `uvx` handles package installation automatically
+- `uvx` creates an isolated environment and caches the package for fast subsequent launches
 
-**Note:** The credentials are stored in `.claude.json`. Make sure not to commit this file if it contains sensitive credentials (already included in `.gitignore`).
+### Step 3: Verify the Server is Working
 
-### For Production/Deployment
+After adding the server:
 
-You can explicitly set environment variables when deploying:
+1. Restart Claude Code or run `/mcp` within a Claude Code session
+2. Verify "espn-fantasy" appears in the MCP servers list
+3. Test by asking Claude: "Show me my fantasy baseball league settings"
 
+## Local Development Setup
+
+If you're developing the MCP server itself:
+
+```bash
+# Clone the repository
+git clone https://github.com/i-am-david-weinstein/espn-fantasy-mcp.git
+cd espn-fantasy-mcp
+
+# Install in development mode
+pip install -e .
+
+# Add to Claude Code (using local installation)
+claude mcp add --transport stdio espn-fantasy \
+  --env ESPN_S2=your_espn_s2_cookie \
+  --env ESPN_SWID={your_espn_swid_cookie} \
+  --env ESPN_LEAGUE_ID=your_league_id \
+  --env ESPN_TEAM_ID=your_team_id \
+  --env ESPN_SEASON_YEAR=2026 \
+  -- python3 -m espn_fantasy_mcp
+```
+
+## Advanced Configuration
+
+### Manual Configuration File
+
+While the `claude mcp add` command is recommended, you can also manually create or edit configuration files:
+
+**Local (`.claude.json` in project directory):**
 ```json
 {
   "mcpServers": {
     "espn-fantasy": {
-      "command": "python",
-      "args": ["-m", "espn_fantasy_mcp"],
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp",
+        "espn-fantasy-mcp"
+      ],
       "env": {
-        "ESPN_S2": "your_espn_s2_cookie",
+        "ESPN_S2": "your_espn_s2_cookie"
         "ESPN_SWID": "{your_espn_swid_cookie}",
         "ESPN_LEAGUE_ID": "your_league_id",
-        "ESPN_SEASON_YEAR": "2024"
+        "ESPN_TEAM_ID": "your_team_id",
+        "ESPN_SEASON_YEAR": "2026"
       }
     }
   }
 }
 ```
+
+**Project (`.mcp.json` in repo root, can be committed):**
+```json
+{
+  "mcpServers": {
+    "espn-fantasy": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp",
+        "espn-fantasy-mcp"
+      ],
+      "env": {
+        "ESPN_LEAGUE_ID": "your_league_id",
+        "ESPN_TEAM_ID": "your_team_id",
+        "ESPN_SEASON_YEAR": "2026"
+      }
+    }
+  }
+}
+```
+
+**For Local Development (after `pip install -e .`):**
+```json
+{
+  "mcpServers": {
+    "espn-fantasy": {
+      "command": "python3",
+      "args": ["-m", "espn_fantasy_mcp"],
+      "env": {
+        "ESPN_S2": "your_espn_s2_cookie",
+        "ESPN_SWID": "{your_espn_swid_cookie}",
+        "ESPN_LEAGUE_ID": "your_league_id",
+        "ESPN_TEAM_ID": "your_team_id",
+        "ESPN_SEASON_YEAR": "2026"
+      }
+    }
+  }
+}
+```
+
+**Note:** With manual configuration, omit sensitive credentials from `.mcp.json` and provide them through local `.claude.json` or environment variables.
 
 ## Available Tools
 
