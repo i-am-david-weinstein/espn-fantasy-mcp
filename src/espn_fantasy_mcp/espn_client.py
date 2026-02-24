@@ -1,6 +1,8 @@
 """ESPN Fantasy Baseball API client."""
 
-from typing import Optional, List, Dict, Tuple
+import requests
+from typing import Optional, List, Dict, Tuple, Any
+from urllib.parse import unquote
 from rapidfuzz import process, fuzz
 from espn_api.baseball import League
 from espn_api.baseball.constant import STATS_MAP
@@ -9,6 +11,9 @@ from espn_fantasy_mcp.models import Team, Player, LeagueSettings, RosterStatus
 
 # Module-level cache for player maps by league_id and year
 _player_map_cache: Dict[Tuple[int, int], Dict] = {}
+
+# ESPN API base URLs
+ESPN_WRITES_BASE_URL = "https://lm-api-writes.fantasy.espn.com/apis/v3/games/flb"
 
 
 class ESPNClient:
@@ -26,12 +31,16 @@ class ESPNClient:
         Args:
             league_id: ESPN league ID
             season_year: Season year (defaults to config)
-            espn_s2: ESPN S2 cookie (defaults to config)
+            espn_s2: ESPN S2 cookie (defaults to config, can be URL-encoded or decoded)
             swid: ESPN SWID cookie (defaults to config)
         """
         self.league_id = int(league_id)
         self.season_year = season_year or Config.get_default_season_year()
-        self.espn_s2 = espn_s2 or Config.ESPN_S2
+
+        # URL-decode espn_s2 if needed (handles both encoded and already-decoded cookies)
+        raw_espn_s2 = espn_s2 or Config.ESPN_S2
+        self.espn_s2 = unquote(raw_espn_s2) if raw_espn_s2 else None
+
         self.swid = swid or Config.ESPN_SWID
 
         # Initialize league connection
@@ -49,6 +58,117 @@ class ESPNClient:
             espn_s2=self.espn_s2,
             swid=self.swid,
         )
+
+    def _make_write_request(
+        self,
+        endpoint: str,
+        data: Dict[str, Any],
+        params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Make a POST request to ESPN write API.
+
+        Args:
+            endpoint: API endpoint path (e.g., '/transactions/')
+            data: JSON payload
+            params: Optional query parameters
+
+        Returns:
+            Response JSON
+
+        Raises:
+            requests.HTTPError: If request fails
+        """
+        url = f"{ESPN_WRITES_BASE_URL}/seasons/{self.season_year}/segments/0/leagues/{self.league_id}{endpoint}"
+
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Fantasy-Platform": "espn-fantasy-web",
+            "X-Fantasy-Source": "kona",
+        }
+
+        cookies = {
+            "espn_s2": self.espn_s2,
+            "SWID": self.swid,
+        }
+
+        response = requests.post(
+            url,
+            json=data,
+            headers=headers,
+            cookies=cookies,
+            params=params
+        )
+        response.raise_for_status()
+        return response.json()
+
+    def modify_lineup(
+        self,
+        team_id: int,
+        moves: List[Dict[str, Any]],
+        scoring_period_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Modify team lineup by moving players between slots.
+
+        Args:
+            team_id: Team ID (0-based index for consistency with read operations)
+            moves: List of move dictionaries, each containing:
+                - player_id: ESPN player ID
+                - from_slot: Current lineup slot ID
+                - to_slot: Target lineup slot ID
+            scoring_period_id: Scoring period (week) for the changes (defaults to current)
+
+        Returns:
+            Transaction response from ESPN API
+
+        Example:
+            # Move one player from bench (16) to starting lineup (0)
+            client.modify_lineup(
+                team_id=3,  # 0-based index (4th team)
+                moves=[{"player_id": 12345, "from_slot": 16, "to_slot": 0}]
+            )
+
+            # Swap two players
+            client.modify_lineup(
+                team_id=3,  # 0-based index (4th team)
+                moves=[
+                    {"player_id": 12345, "from_slot": 0, "to_slot": 16},
+                    {"player_id": 67890, "from_slot": 16, "to_slot": 0}
+                ]
+            )
+        """
+        # Default to current scoring period if not specified
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        # Get the actual ESPN team ID from the team object
+        # team_id parameter is 0-based index, but ESPN API needs actual team_id
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        # Build items array for the transaction
+        items = []
+        for move in moves:
+            items.append({
+                "playerId": move["player_id"],
+                "type": "LINEUP",
+                "fromLineupSlotId": move["from_slot"],
+                "toLineupSlotId": move["to_slot"]
+            })
+
+        # Build transaction payload
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,  # Use actual ESPN team ID, not array index
+            "type": "ROSTER",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "EXECUTE",
+            "items": items
+        }
+
+        # Make the request
+        return self._make_write_request("/transactions/", payload)
 
     def get_league_settings(self) -> LeagueSettings:
         """Get league settings and scoring categories.

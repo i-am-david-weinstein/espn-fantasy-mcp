@@ -6,7 +6,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-from espn_fantasy_mcp.tools import league_tools, team_tools, player_tools
+from espn_fantasy_mcp.tools import league_tools, team_tools, player_tools, roster_tools
 
 logger = logging.getLogger(__name__)
 app = Server("espn-fantasy")
@@ -19,6 +19,7 @@ async def list_tools() -> list[Tool]:
         *league_tools.get_tools(),
         *team_tools.get_tools(),
         *player_tools.get_tools(),
+        *roster_tools.get_tools(),
     ]
 
 
@@ -33,6 +34,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             result = await team_tools.handle_tool(name, arguments)
         elif name in ["get_free_agents", "get_player_info"]:
             result = await player_tools.handle_tool(name, arguments)
+        elif name in ["modify_lineup"]:
+            result = await roster_tools.handle_tool(name, arguments)
         else:
             raise ValueError(f"Unknown tool: {name}")
 
