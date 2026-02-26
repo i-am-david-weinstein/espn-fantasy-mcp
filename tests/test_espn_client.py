@@ -152,7 +152,12 @@ class TestESPNClient:
 
     @patch('espn_fantasy_mcp.espn_client.League')
     def test_get_player_by_name_fuzzy_match(self, mock_league_class):
-        """Test getting a player by fuzzy name match."""
+        """Test getting a player by fuzzy name match.
+
+        Uses a typo "Aaron Jdge" (missing 'u') to test fuzzy matching.
+        The implementation uses rapidfuzz.process.extract() with WRatio scorer,
+        which should reliably match this typo to "Aaron Judge" with >90% similarity.
+        """
         mock_league = Mock()
         mock_league.player_map = {
             "Aaron Judge": 30836,
@@ -165,25 +170,62 @@ class TestESPNClient:
         mock_league_class.return_value = mock_league
 
         client = ESPNClient(league_id="123456")
-        # Use a more similar name to get fuzzy match suggestions
+        # Use a typo to test fuzzy matching
         player, suggestions = client.get_player_by_name("Aaron Jdge", fuzzy_threshold=85)
 
+        # Should not find exact match
         assert player is None
-        # Fuzzy matching should find close matches
-        if len(suggestions) > 0:
-            # If fuzzy matching works, Aaron Judge should be in suggestions
-            assert "Aaron Judge" in suggestions
-        # Note: The exact behavior depends on the rapidfuzz algorithm
+
+        # Fuzzy matching should provide suggestions
+        # The typo "Aaron Jdge" is very similar to "Aaron Judge" and should match
+        assert len(suggestions) > 0, "Fuzzy matching should provide suggestions for close typos"
+        assert "Aaron Judge" in suggestions, (
+            "Expected 'Aaron Judge' in suggestions for typo 'Aaron Jdge'. "
+            f"Got suggestions: {suggestions}"
+        )
 
     @patch('espn_fantasy_mcp.espn_client.League')
     def test_get_player_by_name_no_match(self, mock_league_class):
-        """Test getting a player with no match."""
+        """Test getting a player with no match.
+
+        Tests that completely dissimilar names don't produce suggestions
+        when using a high fuzzy threshold.
+        """
         mock_league = Mock()
         mock_league.player_map = {"Aaron Judge": 30836, 30836: "Aaron Judge"}
         mock_league_class.return_value = mock_league
 
         client = ESPNClient(league_id="123456")
+        # "Nonexistent Player" should not match "Aaron Judge" at 90% threshold
         player, suggestions = client.get_player_by_name("Nonexistent Player", fuzzy_threshold=90)
 
         assert player is None
-        # Might have suggestions if fuzzy match finds something above threshold
+        # Should not suggest "Aaron Judge" for "Nonexistent Player"
+        # These strings have low similarity and shouldn't meet the 90% threshold
+        assert "Aaron Judge" not in suggestions, (
+            "Should not suggest 'Aaron Judge' for completely different name 'Nonexistent Player'"
+        )
+
+    @patch('espn_fantasy_mcp.espn_client.League')
+    def test_get_player_by_name_fuzzy_disabled(self, mock_league_class):
+        """Test getting a player with fuzzy matching disabled.
+
+        Verifies that when fuzzy_match=False, no suggestions are returned
+        even for close typos.
+        """
+        mock_league = Mock()
+        mock_league.player_map = {
+            "Aaron Judge": 30836,
+            30836: "Aaron Judge"
+        }
+        mock_league_class.return_value = mock_league
+
+        client = ESPNClient(league_id="123456")
+        # Disable fuzzy matching
+        player, suggestions = client.get_player_by_name("Aaron Jdge", fuzzy_match=False)
+
+        assert player is None
+        # With fuzzy matching disabled, should not provide any suggestions
+        assert len(suggestions) == 0, (
+            "Should not provide suggestions when fuzzy_match=False"
+        )
