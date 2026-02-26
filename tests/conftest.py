@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 
 @pytest.fixture
-def mock_espn_league():
+def mock_espn_league() -> Mock:
     """Mock ESPN League object."""
     league = Mock()
     league.league_id = 123456
@@ -20,7 +20,7 @@ def mock_espn_league():
 
 
 @pytest.fixture
-def mock_espn_team():
+def mock_espn_team() -> Mock:
     """Mock ESPN Team object."""
     team = Mock()
     team.team_id = 0
@@ -37,7 +37,7 @@ def mock_espn_team():
 
 
 @pytest.fixture
-def mock_espn_player():
+def mock_espn_player() -> Mock:
     """Mock ESPN Player object."""
     player = Mock()
     player.playerId = 12345
@@ -142,7 +142,7 @@ def sample_team_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def mock_env_vars(monkeypatch):
+def mock_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock environment variables for testing."""
     monkeypatch.setenv("ESPN_S2", "test_espn_s2_token")
     monkeypatch.setenv("ESPN_SWID", "{TEST-SWID-1234}")
