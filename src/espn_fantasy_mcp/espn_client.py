@@ -293,6 +293,136 @@ class ESPNClient:
         # Make the request
         return self._make_write_request("/transactions/", payload)
 
+    def claim_waiver(
+        self,
+        team_id: int,
+        add_player_id: int,
+        drop_player_id: Optional[int] = None,
+        bid_amount: Optional[int] = None,
+        scoring_period_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Submit a waiver claim with optional FAAB bid.
+
+        Args:
+            team_id: Team ID (0-based index for consistency with read operations)
+            add_player_id: ESPN player ID to claim off waivers
+            drop_player_id: Optional ESPN player ID to drop (required if roster is full)
+            bid_amount: FAAB bid amount (defaults to 0 for free waiver claim)
+            scoring_period_id: Scoring period (week) for the transaction (defaults to current)
+
+        Returns:
+            Transaction response from ESPN API with isPending=True and transaction ID
+
+        Example:
+            # Claim player with FAAB bid and drop
+            client.claim_waiver(
+                team_id=3,
+                add_player_id=33857,
+                drop_player_id=34982,
+                bid_amount=10
+            )
+
+            # Claim player with $0 bid (roster must have space)
+            client.claim_waiver(
+                team_id=3,
+                add_player_id=33857
+            )
+        """
+        # Default to current scoring period if not specified
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        # Get the actual ESPN team ID from the team object
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        # Build items array for the transaction
+        items = []
+
+        # Add the player
+        items.append({
+            "playerId": add_player_id,
+            "type": "ADD",
+            "toTeamId": actual_team_id
+        })
+
+        # Drop player if specified
+        if drop_player_id is not None:
+            items.append({
+                "playerId": drop_player_id,
+                "type": "DROP",
+                "fromTeamId": actual_team_id
+            })
+
+        # Build transaction payload
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,
+            "type": "WAIVER",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "EXECUTE",
+            "items": items,
+            "bidAmount": bid_amount  # Can be None, will default to 0
+        }
+
+        # Make the request
+        return self._make_write_request("/transactions/", payload)
+
+    def cancel_waiver(
+        self,
+        team_id: int,
+        transaction_id: str,
+        scoring_period_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Cancel a pending waiver claim.
+
+        Args:
+            team_id: Team ID (0-based index for consistency with read operations)
+            transaction_id: Transaction ID from the original waiver claim response
+            scoring_period_id: Scoring period (week) for the transaction (defaults to current)
+
+        Returns:
+            Transaction response from ESPN API with status="CANCELED"
+
+        Example:
+            # First, submit a waiver claim
+            response = client.claim_waiver(
+                team_id=3,
+                add_player_id=33857,
+                drop_player_id=34982,
+                bid_amount=10
+            )
+            transaction_id = response['id']
+
+            # Then cancel it
+            client.cancel_waiver(
+                team_id=3,
+                transaction_id=transaction_id
+            )
+        """
+        # Default to current scoring period if not specified
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        # Get the actual ESPN team ID from the team object
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        # Build transaction payload
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,
+            "type": "WAIVER",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "CANCEL",
+            "relatedTransactionId": transaction_id
+        }
+
+        # Make the request
+        return self._make_write_request("/transactions/", payload)
+
     def get_league_settings(self) -> LeagueSettings:
         """Get league settings and scoring categories.
 
