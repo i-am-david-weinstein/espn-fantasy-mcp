@@ -170,6 +170,129 @@ class ESPNClient:
         # Make the request
         return self._make_write_request("/transactions/", payload)
 
+    def add_free_agent(
+        self,
+        team_id: int,
+        add_player_id: int,
+        drop_player_id: Optional[int] = None,
+        scoring_period_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Add a free agent, optionally dropping a player.
+
+        Args:
+            team_id: Team ID (0-based index for consistency with read operations)
+            add_player_id: ESPN player ID to add
+            drop_player_id: Optional ESPN player ID to drop (required if roster is full)
+            scoring_period_id: Scoring period (week) for the transaction (defaults to current)
+
+        Returns:
+            Transaction response from ESPN API
+
+        Example:
+            # Add player with drop
+            client.add_free_agent(
+                team_id=3,
+                add_player_id=35066,
+                drop_player_id=33481
+            )
+
+            # Add player only (roster must have space)
+            client.add_free_agent(
+                team_id=3,
+                add_player_id=35066
+            )
+        """
+        # Default to current scoring period if not specified
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        # Get the actual ESPN team ID from the team object
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        # Build items array for the transaction
+        items = []
+
+        # Add the player
+        items.append({
+            "playerId": add_player_id,
+            "type": "ADD",
+            "toTeamId": actual_team_id
+        })
+
+        # Drop player if specified
+        if drop_player_id is not None:
+            items.append({
+                "playerId": drop_player_id,
+                "type": "DROP",
+                "fromTeamId": actual_team_id
+            })
+
+        # Build transaction payload
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,
+            "type": "FREEAGENT",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "EXECUTE",
+            "items": items
+        }
+
+        # Make the request
+        return self._make_write_request("/transactions/", payload)
+
+    def drop_player(
+        self,
+        team_id: int,
+        player_id: int,
+        scoring_period_id: Optional[int] = None
+    ) -> Dict[str, Any]:
+        """Drop a player from the roster.
+
+        Args:
+            team_id: Team ID (0-based index for consistency with read operations)
+            player_id: ESPN player ID to drop
+            scoring_period_id: Scoring period (week) for the transaction (defaults to current)
+
+        Returns:
+            Transaction response from ESPN API
+
+        Example:
+            client.drop_player(
+                team_id=3,
+                player_id=33481
+            )
+        """
+        # Default to current scoring period if not specified
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        # Get the actual ESPN team ID from the team object
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        # Build items array for the transaction
+        items = [{
+            "playerId": player_id,
+            "type": "DROP",
+            "fromTeamId": actual_team_id
+        }]
+
+        # Build transaction payload
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,
+            "type": "FREEAGENT",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "EXECUTE",
+            "items": items
+        }
+
+        # Make the request
+        return self._make_write_request("/transactions/", payload)
+
     def get_league_settings(self) -> LeagueSettings:
         """Get league settings and scoring categories.
 
