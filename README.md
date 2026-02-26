@@ -95,8 +95,8 @@ If you're developing the MCP server itself:
 git clone https://github.com/i-am-david-weinstein/espn-fantasy-mcp.git
 cd espn-fantasy-mcp
 
-# Install in development mode
-pip install -e .
+# Install in development mode with dev dependencies
+pip install -e ".[dev]"
 
 # Add to Claude Code (using local installation)
 claude mcp add --transport stdio espn-fantasy \
