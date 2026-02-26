@@ -141,6 +141,17 @@ def sample_team_data() -> Dict[str, Any]:
     }
 
 
+@pytest.fixture(autouse=True)
+def clear_player_map_cache() -> None:
+    """Clear the ESPNClient module-level player map cache before each test.
+
+    Prevents test pollution where one test's cached player_map leaks into
+    subsequent tests that use the same league_id + season_year cache key.
+    """
+    from espn_fantasy_mcp import espn_client
+    espn_client._player_map_cache.clear()
+
+
 @pytest.fixture
 def mock_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock environment variables for testing."""
@@ -149,3 +160,44 @@ def mock_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ESPN_LEAGUE_ID", "123456")
     monkeypatch.setenv("ESPN_SEASON_YEAR", "2024")
     monkeypatch.setenv("ESPN_TEAM_ID", "0")
+
+
+@pytest.fixture
+def mock_player():
+    """Factory fixture for creating mock objects representing our Player model.
+
+    Returns a factory function so tests can create multiple players with
+    different attributes. Uses snake_case attributes to match our Player
+    dataclass, unlike mock_espn_player which uses the raw ESPN API camelCase.
+
+    Usage:
+        def test_something(mock_player):
+            player = mock_player(player_id=111, lineup_slot="BE")
+    """
+    def _make(
+        player_id: int = 12345,
+        name: str = "Test Player",
+        lineup_slot: str = "BE",
+        position: str = "OF",
+    ) -> Mock:
+        player = Mock()
+        player.player_id = player_id
+        player.name = name
+        player.lineup_slot = lineup_slot
+        player.position = position
+        return player
+    return _make
+
+
+@pytest.fixture
+def mock_espn_client() -> Mock:
+    """Mock ESPNClient instance with sensible defaults."""
+    client = Mock()
+    client.league.currentMatchupPeriod = 5
+    client.get_team.return_value = Mock(team_name="Test Team")
+    client.modify_lineup.return_value = {
+        "id": "txn-abc123",
+        "status": "EXECUTED",
+        "scoringPeriodId": 5,
+    }
+    return client
