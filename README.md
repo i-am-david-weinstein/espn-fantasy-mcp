@@ -9,6 +9,7 @@ NOTE: current support is limited to Fantasy Baseball
 - Read league settings and configuration
 - Get team information and standings
 - View team rosters with player details
+- Modify team lineups (move players between active slots and bench)
 - Browse available free agents
 - Look up players by name with fuzzy matching
 - Access player statistics (actual and projected)
@@ -94,8 +95,8 @@ If you're developing the MCP server itself:
 git clone https://github.com/i-am-david-weinstein/espn-fantasy-mcp.git
 cd espn-fantasy-mcp
 
-# Install in development mode
-pip install -e .
+# Install in development mode with dev dependencies
+pip install -e ".[dev]"
 
 # Add to Claude Code (using local installation)
 claude mcp add --transport stdio espn-fantasy \
@@ -125,7 +126,7 @@ While the `claude mcp add` command is recommended, you can also manually create 
         "espn-fantasy-mcp"
       ],
       "env": {
-        "ESPN_S2": "your_espn_s2_cookie"
+        "ESPN_S2": "your_espn_s2_cookie",
         "ESPN_SWID": "{your_espn_swid_cookie}",
         "ESPN_LEAGUE_ID": "your_league_id",
         "ESPN_TEAM_ID": "your_team_id",
@@ -212,7 +213,7 @@ Show me the standings for league 123456
 Get detailed information about a specific team.
 
 **Parameters:**
-- `league_id` (required): ESPN League ID
+- `league_id` (optional): ESPN League ID (defaults to configured league)
 - `team_id` (required): Team ID (0-based index)
 - `season_year` (optional): Season year
 
@@ -222,10 +223,10 @@ Get team info for team 0 in league 123456
 ```
 
 #### `get_roster`
-Get current roster for a team with player details.
+Get current roster for a team with player details and lineup positions.
 
 **Parameters:**
-- `league_id` (required): ESPN League ID
+- `league_id` (optional): ESPN League ID (defaults to configured league)
 - `team_id` (required): Team ID (0-based index)
 - `season_year` (optional): Season year
 
@@ -269,6 +270,32 @@ Get info for Aaron Judge in league 123456
 - Shows whether player is rostered, on waivers, or a free agent
 - Includes fantasy team information if player is rostered
 - Returns actual and projected stats
+
+### Roster Tools
+
+#### `modify_lineup`
+Modify team lineup by moving players between lineup slots. Uses a confirmation pattern: the first call (with `confirm=false`, the default) returns a preview of the proposed changes; the second call (with `confirm=true`) executes them. Supports moving a single player or swapping multiple players in one transaction.
+
+**Parameters:**
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `team_id` (required): Team ID (0-based index)
+- `moves` (required): List of lineup moves, each containing:
+  - `player_id` (required): ESPN player ID
+  - `from_slot` (required): Current lineup slot ID
+  - `to_slot` (required): Target lineup slot ID
+- `scoring_period_id` (optional): Scoring period (week) for changes (defaults to current period)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), returns a preview. If `true`, executes the changes.
+
+**Example:**
+```
+Move player 4140653 from bench (slot 16) to pitcher slot (slot 13) for my team
+```
+
+**Notes:**
+- Always preview changes first (default behavior) before confirming
+- The tool validates that each player is on the roster and currently in the specified `from_slot`
+- Returns validation errors if any moves are invalid, without making any changes
 
 ## Usage Examples
 
@@ -339,7 +366,8 @@ espn-fantasy-mcp/
 │   └── tools/            # MCP tools
 │       ├── league_tools.py
 │       ├── team_tools.py
-│       └── player_tools.py
+│       ├── player_tools.py
+│       └── roster_tools.py
 ├── tests/
 ├── docs/                 # Additional documentation
 ├── pyproject.toml
@@ -348,7 +376,7 @@ espn-fantasy-mcp/
 
 ## Future Enhancements
 
-- Write operations (add/drop players, trades)
+- Add/drop players and trades
 - Transaction history
 - Additional sports (Football, Basketball, Hockey)
 
