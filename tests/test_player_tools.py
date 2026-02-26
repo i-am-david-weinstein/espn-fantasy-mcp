@@ -86,7 +86,10 @@ class TestPlayerTools:
     @patch('espn_fantasy_mcp.tools.player_tools.ESPNClient')
     async def test_handle_get_free_agents_error(self, mock_client_class, mock_env_vars):
         """Test handle_get_free_agents with error."""
-        mock_client_class.side_effect = ConnectionError("API connection failed")
+        # Mock the client instance and make the method raise an exception
+        mock_client = Mock()
+        mock_client.get_free_agents.side_effect = ConnectionError("API connection failed")
+        mock_client_class.return_value = mock_client
 
         result = await player_tools.handle_get_free_agents({
             "league_id": "123456"
@@ -172,7 +175,10 @@ class TestPlayerTools:
     @patch('espn_fantasy_mcp.tools.player_tools.ESPNClient')
     async def test_handle_get_player_info_error(self, mock_client_class, mock_env_vars):
         """Test handle_get_player_info with error."""
-        mock_client_class.side_effect = ValueError("Invalid league ID")
+        # Mock the client instance and make the method raise an exception
+        mock_client = Mock()
+        mock_client.get_player_by_name.side_effect = ValueError("Invalid league ID")
+        mock_client_class.return_value = mock_client
 
         result = await player_tools.handle_get_player_info({
             "player_name": "Aaron Judge",

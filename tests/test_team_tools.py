@@ -161,7 +161,10 @@ class TestTeamTools:
     @patch('espn_fantasy_mcp.tools.team_tools.ESPNClient')
     async def test_handle_get_roster_error(self, mock_client_class, mock_env_vars):
         """Test handle_get_roster with error."""
-        mock_client_class.side_effect = ConnectionError("API connection failed")
+        # Mock the client instance and make the method raise an exception
+        mock_client = Mock()
+        mock_client.get_roster.side_effect = ConnectionError("API connection failed")
+        mock_client_class.return_value = mock_client
 
         result = await team_tools.handle_get_roster({
             "league_id": "123456",
