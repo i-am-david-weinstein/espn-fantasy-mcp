@@ -572,6 +572,40 @@ class TestHandleModifyLineupErrorHandling:
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
+    async def test_key_error(self, mock_client_class, mock_espn_client, mock_env_vars):
+        """Test that KeyError from client returns a failure response."""
+        mock_espn_client.get_roster.side_effect = KeyError("missing_key")
+        mock_client_class.return_value = mock_espn_client
+
+        result = await roster_tools.handle_modify_lineup({
+            "league_id": "123456",
+            "team_id": 0,
+            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+        })
+
+        response = json.loads(result)
+        assert response["success"] is False
+        assert response["error"] == "KeyError"
+
+    @pytest.mark.asyncio
+    @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
+    async def test_value_error_from_client(self, mock_client_class, mock_env_vars):
+        """Test that ValueError raised inside the try block (e.g., from ESPNClient) is caught."""
+        mock_client_class.side_effect = ValueError("invalid configuration")
+
+        result = await roster_tools.handle_modify_lineup({
+            "league_id": "123456",
+            "team_id": 0,
+            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+        })
+
+        response = json.loads(result)
+        assert response["success"] is False
+        assert response["error"] == "ValueError"
+        assert "invalid configuration" in response["message"]
+
+    @pytest.mark.asyncio
+    @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
     @patch("espn_fantasy_mcp.tools.roster_tools.POSITION_MAP", MOCK_POSITION_MAP)
     async def test_api_error_during_execution(
         self, mock_client_class, mock_espn_client, mock_player, mock_env_vars
