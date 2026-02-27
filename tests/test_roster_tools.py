@@ -601,7 +601,7 @@ class TestHandleModifyLineupDefaults:
     @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
     @patch("espn_fantasy_mcp.tools.roster_tools.POSITION_MAP", MOCK_POSITION_MAP)
     async def test_uses_default_league_id_from_config(
-        self, mock_client_class, mock_player, mock_espn_client, monkeypatch
+        self, mock_client_class, mock_espn_client, mock_player, monkeypatch
     ):
         """Test that league_id defaults to the configured value when not provided."""
         import espn_fantasy_mcp.tools.roster_tools as rt
