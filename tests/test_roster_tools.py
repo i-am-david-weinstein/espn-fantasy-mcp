@@ -79,11 +79,8 @@ class TestHandleModifyLineupValidation:
     @pytest.mark.asyncio
     async def test_missing_league_id_raises(self, monkeypatch):
         """Test that missing league_id raises ValueError."""
-        monkeypatch.delenv("ESPN_LEAGUE_ID", raising=False)
-
-        import importlib
-        import espn_fantasy_mcp.config
-        importlib.reload(espn_fantasy_mcp.config)
+        import espn_fantasy_mcp.tools.roster_tools as rt
+        monkeypatch.setattr(rt.Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await roster_tools.handle_modify_lineup({
