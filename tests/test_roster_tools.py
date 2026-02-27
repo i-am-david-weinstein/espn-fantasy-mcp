@@ -448,10 +448,10 @@ class TestHandleModifyLineupExecute:
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
     @patch("espn_fantasy_mcp.tools.roster_tools.POSITION_MAP", MOCK_POSITION_MAP)
-    async def test_execute_passes_none_scoring_period_when_not_provided(
+    async def test_execute_delegates_scoring_period_to_client_when_not_provided(
         self, mock_client_class, mock_espn_client, mock_player, mock_env_vars
     ):
-        """Test that omitting scoring_period_id passes None so the client uses its default."""
+        """Test that omitting scoring_period_id passes None to delegate resolution to the client."""
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
