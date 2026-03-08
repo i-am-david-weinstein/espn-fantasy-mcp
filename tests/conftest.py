@@ -155,11 +155,12 @@ def clear_player_map_cache() -> None:
 @pytest.fixture
 def mock_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock environment variables for testing."""
-    monkeypatch.setenv("ESPN_S2", "test_espn_s2_token")
-    monkeypatch.setenv("ESPN_SWID", "{TEST-SWID-1234}")
-    monkeypatch.setenv("ESPN_LEAGUE_ID", "123456")
-    monkeypatch.setenv("ESPN_SEASON_YEAR", "2024")
-    monkeypatch.setenv("ESPN_TEAM_ID", "0")
+    from espn_fantasy_mcp.config import Config
+    monkeypatch.setattr(Config, "ESPN_S2", "test_espn_s2_token")
+    monkeypatch.setattr(Config, "ESPN_SWID", "{TEST-SWID-1234}")
+    monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", "123456")
+    monkeypatch.setattr(Config, "ESPN_SEASON_YEAR", 2024)
+    monkeypatch.setattr(Config, "ESPN_TEAM_ID", "0")
 
 
 @pytest.fixture

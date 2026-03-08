@@ -48,11 +48,8 @@ class TestLeagueTools:
     @pytest.mark.asyncio
     async def test_handle_get_league_settings_missing_league_id(self, monkeypatch):
         """Test handle_get_league_settings without league_id."""
-        monkeypatch.delenv("ESPN_LEAGUE_ID", raising=False)
-
-        import importlib
-        import espn_fantasy_mcp.config
-        importlib.reload(espn_fantasy_mcp.config)
+        from espn_fantasy_mcp.config import Config
+        monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await league_tools.handle_get_league_settings({})
@@ -148,11 +145,8 @@ class TestLeagueTools:
     @pytest.mark.asyncio
     async def test_handle_get_standings_missing_league_id(self, monkeypatch):
         """Test handle_get_standings without league_id."""
-        monkeypatch.delenv("ESPN_LEAGUE_ID", raising=False)
-
-        import importlib
-        import espn_fantasy_mcp.config
-        importlib.reload(espn_fantasy_mcp.config)
+        from espn_fantasy_mcp.config import Config
+        monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await league_tools.handle_get_standings({})
