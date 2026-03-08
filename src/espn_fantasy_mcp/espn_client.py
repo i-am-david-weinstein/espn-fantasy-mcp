@@ -84,7 +84,9 @@ class ESPNClient:
             "X-Fantasy-Source": "kona",
         }
 
-        cookies = {k: v for k, v in {"espn_s2": self.espn_s2, "SWID": self.swid}.items() if v is not None}
+        cookies = {
+            k: v for k, v in {"espn_s2": self.espn_s2, "SWID": self.swid}.items() if v is not None
+        }
 
         response = requests.post(url, json=data, headers=headers, cookies=cookies, params=params)
         response.raise_for_status()
