@@ -1,4 +1,5 @@
 """Transaction management MCP tools."""
+
 import json
 from mcp.types import Tool
 from espn_fantasy_mcp.espn_client import ESPNClient
@@ -233,7 +234,12 @@ def get_tools() -> list[Tool]:
                         "default": False,
                     },
                 },
-                "required": ["team_id", "receiving_team_id", "send_player_ids", "receive_player_ids"],
+                "required": [
+                    "team_id",
+                    "receiving_team_id",
+                    "send_player_ids",
+                    "receive_player_ids",
+                ],
             },
         ),
         Tool(
@@ -313,8 +319,7 @@ def get_tools() -> list[Tool]:
                     "confirm": {
                         "type": "boolean",
                         "description": (
-                            "If false (default), returns a preview. "
-                            "If true, accepts the trade."
+                            "If false (default), returns a preview. " "If true, accepts the trade."
                         ),
                         "default": False,
                     },
@@ -359,8 +364,7 @@ def get_tools() -> list[Tool]:
                     "confirm": {
                         "type": "boolean",
                         "description": (
-                            "If false (default), returns a preview. "
-                            "If true, declines the trade."
+                            "If false (default), returns a preview. " "If true, declines the trade."
                         ),
                         "default": False,
                     },
@@ -462,8 +466,8 @@ async def handle_get_pending_transactions(arguments: dict) -> str:
             team = client.get_team(team_id)
             team_name = team.team_name
 
-        pending_waivers = result['pending_waivers']
-        pending_trades = result['pending_trades']
+        pending_waivers = result["pending_waivers"]
+        pending_trades = result["pending_trades"]
 
         response = {
             "success": True,
@@ -477,11 +481,14 @@ async def handle_get_pending_transactions(arguments: dict) -> str:
         return json.dumps(response, indent=2)
 
     except Exception as e:
-        return json.dumps({
-            "success": False,
-            "error": type(e).__name__,
-            "message": f"Failed to get pending transactions: {e}",
-        }, indent=2)
+        return json.dumps(
+            {
+                "success": False,
+                "error": type(e).__name__,
+                "message": f"Failed to get pending transactions: {e}",
+            },
+            indent=2,
+        )
 
 
 async def handle_add_free_agent(arguments: dict) -> str:
@@ -593,11 +600,11 @@ async def handle_add_free_agent(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
@@ -696,11 +703,11 @@ async def handle_drop_player(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
@@ -774,7 +781,7 @@ async def handle_claim_waiver(arguments: dict) -> str:
                 "position": add_player.position,
                 "pro_team": add_player.team,
                 "roster_status": add_player.roster_status,
-            }
+            },
         }
 
         if drop_player:
@@ -830,11 +837,11 @@ async def handle_claim_waiver(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
@@ -909,11 +916,11 @@ async def handle_cancel_waiver(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
@@ -962,22 +969,28 @@ async def handle_propose_trade(arguments: dict) -> str:
         proposing_roster_map = {p.player_id: p for p in proposing_roster}
         for pid in send_player_ids:
             if pid not in proposing_roster_map:
-                return json.dumps({
-                    "success": False,
-                    "error": "ValidationError",
-                    "message": f"Player ID {pid} is not on your roster (team {team_id})",
-                }, indent=2)
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error": "ValidationError",
+                        "message": f"Player ID {pid} is not on your roster (team {team_id})",
+                    },
+                    indent=2,
+                )
 
         # Validate receive players are on receiving team's roster
         receiving_roster = client.get_roster(receiving_team_id)
         receiving_roster_map = {p.player_id: p for p in receiving_roster}
         for pid in receive_player_ids:
             if pid not in receiving_roster_map:
-                return json.dumps({
-                    "success": False,
-                    "error": "ValidationError",
-                    "message": f"Player ID {pid} is not on the receiving team's roster (team {receiving_team_id})",
-                }, indent=2)
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error": "ValidationError",
+                        "message": f"Player ID {pid} is not on the receiving team's roster (team {receiving_team_id})",
+                    },
+                    indent=2,
+                )
 
         # Build trade details for preview/response
         proposing_team = client.get_team(team_id)
@@ -1046,19 +1059,22 @@ async def handle_propose_trade(arguments: dict) -> str:
 
     except Exception as e:
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
-        return json.dumps({
-            "success": False,
-            "error": type(e).__name__,
-            "message": f"Failed to propose trade: {error_msg}",
-        }, indent=2)
+        return json.dumps(
+            {
+                "success": False,
+                "error": type(e).__name__,
+                "message": f"Failed to propose trade: {error_msg}",
+            },
+            indent=2,
+        )
 
 
 async def handle_cancel_trade(arguments: dict) -> str:
@@ -1117,19 +1133,22 @@ async def handle_cancel_trade(arguments: dict) -> str:
 
     except Exception as e:
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
-        return json.dumps({
-            "success": False,
-            "error": type(e).__name__,
-            "message": f"Failed to cancel trade: {error_msg}",
-        }, indent=2)
+        return json.dumps(
+            {
+                "success": False,
+                "error": type(e).__name__,
+                "message": f"Failed to cancel trade: {error_msg}",
+            },
+            indent=2,
+        )
 
 
 async def handle_accept_trade(arguments: dict) -> str:
@@ -1188,19 +1207,22 @@ async def handle_accept_trade(arguments: dict) -> str:
 
     except Exception as e:
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
-        return json.dumps({
-            "success": False,
-            "error": type(e).__name__,
-            "message": f"Failed to accept trade: {error_msg}",
-        }, indent=2)
+        return json.dumps(
+            {
+                "success": False,
+                "error": type(e).__name__,
+                "message": f"Failed to accept trade: {error_msg}",
+            },
+            indent=2,
+        )
 
 
 async def handle_decline_trade(arguments: dict) -> str:
@@ -1262,16 +1284,19 @@ async def handle_decline_trade(arguments: dict) -> str:
 
     except Exception as e:
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
-        return json.dumps({
-            "success": False,
-            "error": type(e).__name__,
-            "message": f"Failed to decline trade: {error_msg}",
-        }, indent=2)
+        return json.dumps(
+            {
+                "success": False,
+                "error": type(e).__name__,
+                "message": f"Failed to decline trade: {error_msg}",
+            },
+            indent=2,
+        )

@@ -1,4 +1,5 @@
 """Entry point for ESPN Fantasy MCP server."""
+
 import asyncio
 import logging
 

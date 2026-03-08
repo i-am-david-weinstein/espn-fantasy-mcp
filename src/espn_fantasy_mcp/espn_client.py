@@ -61,10 +61,7 @@ class ESPNClient:
         )
 
     def _make_write_request(
-        self,
-        endpoint: str,
-        data: Dict[str, Any],
-        params: Optional[Dict[str, Any]] = None
+        self, endpoint: str, data: Dict[str, Any], params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Make a POST request to ESPN write API.
 
@@ -93,21 +90,12 @@ class ESPNClient:
             "SWID": self.swid,
         }
 
-        response = requests.post(
-            url,
-            json=data,
-            headers=headers,
-            cookies=cookies,
-            params=params
-        )
+        response = requests.post(url, json=data, headers=headers, cookies=cookies, params=params)
         response.raise_for_status()
         return response.json()
 
     def modify_lineup(
-        self,
-        team_id: int,
-        moves: List[Dict[str, Any]],
-        scoring_period_id: Optional[int] = None
+        self, team_id: int, moves: List[Dict[str, Any]], scoring_period_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """Modify team lineup by moving players between slots.
 
@@ -150,12 +138,14 @@ class ESPNClient:
         # Build items array for the transaction
         items = []
         for move in moves:
-            items.append({
-                "playerId": move["player_id"],
-                "type": "LINEUP",
-                "fromLineupSlotId": move["from_slot"],
-                "toLineupSlotId": move["to_slot"]
-            })
+            items.append(
+                {
+                    "playerId": move["player_id"],
+                    "type": "LINEUP",
+                    "fromLineupSlotId": move["from_slot"],
+                    "toLineupSlotId": move["to_slot"],
+                }
+            )
 
         # Build transaction payload
         payload = {
@@ -165,7 +155,7 @@ class ESPNClient:
             "memberId": self.swid,
             "scoringPeriodId": scoring_period_id,
             "executionType": "EXECUTE",
-            "items": items
+            "items": items,
         }
 
         # Make the request
@@ -176,7 +166,7 @@ class ESPNClient:
         team_id: int,
         add_player_id: int,
         drop_player_id: Optional[int] = None,
-        scoring_period_id: Optional[int] = None
+        scoring_period_id: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Add a free agent, optionally dropping a player.
 
@@ -215,19 +205,11 @@ class ESPNClient:
         items = []
 
         # Add the player
-        items.append({
-            "playerId": add_player_id,
-            "type": "ADD",
-            "toTeamId": actual_team_id
-        })
+        items.append({"playerId": add_player_id, "type": "ADD", "toTeamId": actual_team_id})
 
         # Drop player if specified
         if drop_player_id is not None:
-            items.append({
-                "playerId": drop_player_id,
-                "type": "DROP",
-                "fromTeamId": actual_team_id
-            })
+            items.append({"playerId": drop_player_id, "type": "DROP", "fromTeamId": actual_team_id})
 
         # Build transaction payload
         payload = {
@@ -237,17 +219,14 @@ class ESPNClient:
             "memberId": self.swid,
             "scoringPeriodId": scoring_period_id,
             "executionType": "EXECUTE",
-            "items": items
+            "items": items,
         }
 
         # Make the request
         return self._make_write_request("/transactions/", payload)
 
     def drop_player(
-        self,
-        team_id: int,
-        player_id: int,
-        scoring_period_id: Optional[int] = None
+        self, team_id: int, player_id: int, scoring_period_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """Drop a player from the roster.
 
@@ -274,11 +253,7 @@ class ESPNClient:
         actual_team_id = espn_team.team_id
 
         # Build items array for the transaction
-        items = [{
-            "playerId": player_id,
-            "type": "DROP",
-            "fromTeamId": actual_team_id
-        }]
+        items = [{"playerId": player_id, "type": "DROP", "fromTeamId": actual_team_id}]
 
         # Build transaction payload
         payload = {
@@ -288,7 +263,7 @@ class ESPNClient:
             "memberId": self.swid,
             "scoringPeriodId": scoring_period_id,
             "executionType": "EXECUTE",
-            "items": items
+            "items": items,
         }
 
         # Make the request
@@ -300,7 +275,7 @@ class ESPNClient:
         add_player_id: int,
         drop_player_id: Optional[int] = None,
         bid_amount: Optional[int] = None,
-        scoring_period_id: Optional[int] = None
+        scoring_period_id: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Submit a waiver claim with optional FAAB bid.
 
@@ -341,19 +316,11 @@ class ESPNClient:
         items = []
 
         # Add the player
-        items.append({
-            "playerId": add_player_id,
-            "type": "ADD",
-            "toTeamId": actual_team_id
-        })
+        items.append({"playerId": add_player_id, "type": "ADD", "toTeamId": actual_team_id})
 
         # Drop player if specified
         if drop_player_id is not None:
-            items.append({
-                "playerId": drop_player_id,
-                "type": "DROP",
-                "fromTeamId": actual_team_id
-            })
+            items.append({"playerId": drop_player_id, "type": "DROP", "fromTeamId": actual_team_id})
 
         # Build transaction payload
         payload = {
@@ -364,17 +331,14 @@ class ESPNClient:
             "scoringPeriodId": scoring_period_id,
             "executionType": "EXECUTE",
             "items": items,
-            "bidAmount": bid_amount  # Can be None, will default to 0
+            "bidAmount": bid_amount,  # Can be None, will default to 0
         }
 
         # Make the request
         return self._make_write_request("/transactions/", payload)
 
     def cancel_waiver(
-        self,
-        team_id: int,
-        transaction_id: str,
-        scoring_period_id: Optional[int] = None
+        self, team_id: int, transaction_id: str, scoring_period_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """Cancel a pending waiver claim.
 
@@ -418,7 +382,7 @@ class ESPNClient:
             "memberId": self.swid,
             "scoringPeriodId": scoring_period_id,
             "executionType": "CANCEL",
-            "relatedTransactionId": transaction_id
+            "relatedTransactionId": transaction_id,
         }
 
         # Make the request
@@ -440,15 +404,17 @@ class ESPNClient:
         import json as _json
 
         params = {
-            'view': 'mTransactions2',
-            'scoringPeriodId': self.league.currentMatchupPeriod,
+            "view": "mTransactions2",
+            "scoringPeriodId": self.league.currentMatchupPeriod,
         }
-        filters = {"transactions": {"filterType": {"value": ["WAIVER", "TRADE_PROPOSAL", "TRADE_ACCEPT"]}}}
-        headers = {'x-fantasy-filter': _json.dumps(filters)}
+        filters = {
+            "transactions": {"filterType": {"value": ["WAIVER", "TRADE_PROPOSAL", "TRADE_ACCEPT"]}}
+        }
+        headers = {"x-fantasy-filter": _json.dumps(filters)}
 
         data = self.league.espn_request.league_get(params=params, headers=headers)
 
-        if 'transactions' not in data:
+        if "transactions" not in data:
             return {"pending_waivers": [], "pending_trades": []}
 
         # Resolve actual ESPN team ID for filtering
@@ -459,71 +425,71 @@ class ESPNClient:
         team_map = {t.team_id: t.team_name for t in self.league.teams}
         player_map = self._get_player_map()
 
-        all_txns = data['transactions']
+        all_txns = data["transactions"]
 
         # Index by ID so TRADE_ACCEPT can look up the original proposal's items
         # (TRADE_ACCEPT itself carries no items).
-        txn_by_id = {txn['id']: txn for txn in all_txns}
+        txn_by_id = {txn["id"]: txn for txn in all_txns}
 
         # Build a set of transaction IDs superseded by a later action
         # (cancellation, acceptance, or decline). Skip the originals to avoid
         # showing both "PENDING" and "CANCELED/ACCEPTED" for the same trade.
         superseded_ids = {
-            txn['relatedTransactionId']
-            for txn in all_txns
-            if txn.get('relatedTransactionId')
+            txn["relatedTransactionId"] for txn in all_txns if txn.get("relatedTransactionId")
         }
 
         pending_waivers = []
         pending_trades = []
 
         for txn in all_txns:
-            if txn.get('id') in superseded_ids:
+            if txn.get("id") in superseded_ids:
                 continue
 
-            txn_type = txn.get('type')
-            txn_team_id = txn.get('teamId')
+            txn_type = txn.get("type")
+            txn_team_id = txn.get("teamId")
 
-            if txn_type == 'WAIVER':
+            if txn_type == "WAIVER":
                 if actual_team_id is not None and txn_team_id != actual_team_id:
                     continue
 
-                items = txn.get('items', [])
+                items = txn.get("items", [])
                 add_player = None
                 drop_player = None
                 for item in items:
-                    pid = item.get('playerId')
+                    pid = item.get("playerId")
                     name = player_map.get(pid, f"Player {pid}")
-                    if item.get('type') == 'ADD':
-                        add_player = {'player_id': pid, 'player_name': name}
-                    elif item.get('type') == 'DROP':
-                        drop_player = {'player_id': pid, 'player_name': name}
+                    if item.get("type") == "ADD":
+                        add_player = {"player_id": pid, "player_name": name}
+                    elif item.get("type") == "DROP":
+                        drop_player = {"player_id": pid, "player_name": name}
 
-                pending_waivers.append({
-                    'transaction_id': txn.get('id'),
-                    'status': txn.get('status'),
-                    'team_id': txn_team_id,
-                    'team_name': team_map.get(txn_team_id, f"Team {txn_team_id}"),
-                    'bid_amount': txn.get('bidAmount', 0),
-                    'scoring_period_id': txn.get('scoringPeriodId'),
-                    'add_player': add_player,
-                    'drop_player': drop_player,
-                })
+                pending_waivers.append(
+                    {
+                        "transaction_id": txn.get("id"),
+                        "status": txn.get("status"),
+                        "team_id": txn_team_id,
+                        "team_name": team_map.get(txn_team_id, f"Team {txn_team_id}"),
+                        "bid_amount": txn.get("bidAmount", 0),
+                        "scoring_period_id": txn.get("scoringPeriodId"),
+                        "add_player": add_player,
+                        "drop_player": drop_player,
+                    }
+                )
 
-            elif txn_type in ('TRADE_PROPOSAL', 'TRADE_ACCEPT'):
+            elif txn_type in ("TRADE_PROPOSAL", "TRADE_ACCEPT"):
                 # TRADE_ACCEPT has no items — look them up on the original proposal.
-                if txn_type == 'TRADE_ACCEPT':
-                    original = txn_by_id.get(txn.get('relatedTransactionId'), {})
-                    items = original.get('items', [])
-                    proposing_team_id = original.get('teamId', txn_team_id)
+                if txn_type == "TRADE_ACCEPT":
+                    original = txn_by_id.get(txn.get("relatedTransactionId"), {})
+                    items = original.get("items", [])
+                    proposing_team_id = original.get("teamId", txn_team_id)
                 else:
-                    items = txn.get('items', [])
+                    items = txn.get("items", [])
                     proposing_team_id = txn_team_id
 
                 if actual_team_id is not None:
                     involved = any(
-                        item.get('fromTeamId') == actual_team_id or
-                        item.get('toTeamId') == actual_team_id
+                        item.get("fromTeamId") == actual_team_id
+                        or item.get("toTeamId") == actual_team_id
                         for item in items
                     )
                     if not involved:
@@ -531,36 +497,42 @@ class ESPNClient:
 
                 trade_items = []
                 for item in items:
-                    pid = item.get('playerId')
+                    pid = item.get("playerId")
                     name = player_map.get(pid, f"Player {pid}")
-                    from_id = item.get('fromTeamId')
-                    to_id = item.get('toTeamId')
-                    trade_items.append({
-                        'player_id': pid,
-                        'player_name': name,
-                        'from_team_id': from_id,
-                        'from_team_name': team_map.get(from_id, f"Team {from_id}"),
-                        'to_team_id': to_id,
-                        'to_team_name': team_map.get(to_id, f"Team {to_id}"),
-                    })
+                    from_id = item.get("fromTeamId")
+                    to_id = item.get("toTeamId")
+                    trade_items.append(
+                        {
+                            "player_id": pid,
+                            "player_name": name,
+                            "from_team_id": from_id,
+                            "from_team_name": team_map.get(from_id, f"Team {from_id}"),
+                            "to_team_id": to_id,
+                            "to_team_name": team_map.get(to_id, f"Team {to_id}"),
+                        }
+                    )
 
-                pending_trades.append({
-                    'transaction_id': txn.get('id'),
-                    'type': txn_type,
-                    'status': txn.get('status'),
-                    'is_pending_vote': txn_type == 'TRADE_ACCEPT',
-                    'proposing_team_id': proposing_team_id,
-                    'proposing_team_name': team_map.get(proposing_team_id, f"Team {proposing_team_id}"),
-                    'scoring_period_id': txn.get('scoringPeriodId'),
-                    'comment': txn.get('comment'),
-                    'expiration_date': txn.get('expirationDate'),
-                    'team_actions': txn.get('teamActions', {}),
-                    'items': trade_items,
-                })
+                pending_trades.append(
+                    {
+                        "transaction_id": txn.get("id"),
+                        "type": txn_type,
+                        "status": txn.get("status"),
+                        "is_pending_vote": txn_type == "TRADE_ACCEPT",
+                        "proposing_team_id": proposing_team_id,
+                        "proposing_team_name": team_map.get(
+                            proposing_team_id, f"Team {proposing_team_id}"
+                        ),
+                        "scoring_period_id": txn.get("scoringPeriodId"),
+                        "comment": txn.get("comment"),
+                        "expiration_date": txn.get("expirationDate"),
+                        "team_actions": txn.get("teamActions", {}),
+                        "items": trade_items,
+                    }
+                )
 
         return {
-            'pending_waivers': pending_waivers,
-            'pending_trades': pending_trades,
+            "pending_waivers": pending_waivers,
+            "pending_trades": pending_trades,
         }
 
     def propose_trade(
@@ -598,23 +570,27 @@ class ESPNClient:
 
         items = []
         for player_id in send_player_ids:
-            items.append({
-                "playerId": player_id,
-                "type": "TRADE",
-                "fromTeamId": proposing_actual_id,
-                "toTeamId": receiving_actual_id,
-            })
+            items.append(
+                {
+                    "playerId": player_id,
+                    "type": "TRADE",
+                    "fromTeamId": proposing_actual_id,
+                    "toTeamId": receiving_actual_id,
+                }
+            )
         for player_id in receive_player_ids:
-            items.append({
-                "playerId": player_id,
-                "type": "TRADE",
-                "fromTeamId": receiving_actual_id,
-                "toTeamId": proposing_actual_id,
-            })
+            items.append(
+                {
+                    "playerId": player_id,
+                    "type": "TRADE",
+                    "fromTeamId": receiving_actual_id,
+                    "toTeamId": proposing_actual_id,
+                }
+            )
 
-        expiration_date = (
-            datetime.now(timezone.utc) + timedelta(days=expiration_days)
-        ).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        expiration_date = (datetime.now(timezone.utc) + timedelta(days=expiration_days)).strftime(
+            "%Y-%m-%dT%H:%M:%S.000Z"
+        )
 
         payload = {
             "isLeagueManager": False,
@@ -747,26 +723,53 @@ class ESPNClient:
 
         # Fetch raw settings data from ESPN API
         raw_data = self.league.espn_request.get_league()
-        raw_settings = raw_data.get('settings', {})
+        raw_settings = raw_data.get("settings", {})
 
         # Build stat ID to name mapping from STATS_MAP
         stat_id_map = {str(stat_id): stat_name for stat_id, stat_name in STATS_MAP.items()}
 
         # Pitching stat names to identify them
         pitching_stat_names = {
-            'GP', 'GS', 'OUTS', 'TBF', 'P_H', 'P_BB', 'WHIP', 'P_R', 'ER',
-            'P_HR', 'ERA', 'K', 'W', 'L', 'SV', 'QS', 'HLD', 'BLSV', 'K/BB',
-            'SVHD', 'WP', 'BLK', 'PK', 'SVO', 'CG', 'WPCT', 'OBA', 'OOBP',
-            'P_IBB', 'SV%', '64'
+            "GP",
+            "GS",
+            "OUTS",
+            "TBF",
+            "P_H",
+            "P_BB",
+            "WHIP",
+            "P_R",
+            "ER",
+            "P_HR",
+            "ERA",
+            "K",
+            "W",
+            "L",
+            "SV",
+            "QS",
+            "HLD",
+            "BLSV",
+            "K/BB",
+            "SVHD",
+            "WP",
+            "BLK",
+            "PK",
+            "SVO",
+            "CG",
+            "WPCT",
+            "OBA",
+            "OOBP",
+            "P_IBB",
+            "SV%",
+            "64",
         }
 
         # Parse actual scoring categories from scoringSettings.scoringItems
         batting_stats = []
         pitching_stats = []
 
-        scoring_items = raw_settings.get('scoringSettings', {}).get('scoringItems', [])
+        scoring_items = raw_settings.get("scoringSettings", {}).get("scoringItems", [])
         for item in scoring_items:
-            stat_id = str(item.get('statId'))
+            stat_id = str(item.get("statId"))
             stat_name = stat_id_map.get(stat_id)
 
             if stat_name:
@@ -775,10 +778,7 @@ class ESPNClient:
                 else:
                     batting_stats.append(stat_name)
 
-        stat_categories = {
-            "batting": sorted(batting_stats),
-            "pitching": sorted(pitching_stats)
-        }
+        stat_categories = {"batting": sorted(batting_stats), "pitching": sorted(pitching_stats)}
 
         return LeagueSettings(
             league_id=str(self.league_id),
@@ -789,17 +789,17 @@ class ESPNClient:
             reg_season_count=settings.reg_season_count,
             scoring_type=settings.scoring_type,
             # Raw settings objects from ESPN API
-            acquisition_settings=raw_settings.get('acquisitionSettings', {}),
-            draft_settings=raw_settings.get('draftSettings', {}),
-            finance_settings=raw_settings.get('financeSettings', {}),
-            roster_settings=raw_settings.get('rosterSettings', {}),
-            schedule_settings=raw_settings.get('scheduleSettings', {}),
-            scoring_settings=raw_settings.get('scoringSettings', {}),
-            trade_settings=raw_settings.get('tradeSettings', {}),
+            acquisition_settings=raw_settings.get("acquisitionSettings", {}),
+            draft_settings=raw_settings.get("draftSettings", {}),
+            finance_settings=raw_settings.get("financeSettings", {}),
+            roster_settings=raw_settings.get("rosterSettings", {}),
+            schedule_settings=raw_settings.get("scheduleSettings", {}),
+            scoring_settings=raw_settings.get("scoringSettings", {}),
+            trade_settings=raw_settings.get("tradeSettings", {}),
             # Simple settings fields
-            experience_type=raw_settings.get('experienceType'),
-            is_public=raw_settings.get('isPublic', True),
-            restriction_type=raw_settings.get('restrictionType'),
+            experience_type=raw_settings.get("experienceType"),
+            is_public=raw_settings.get("isPublic", True),
+            restriction_type=raw_settings.get("restrictionType"),
             # Computed fields
             stat_categories=stat_categories,
             stat_id_map=stat_id_map,
@@ -896,9 +896,7 @@ class ESPNClient:
 
         return players
 
-    def get_free_agents(
-        self, size: int = 50, position: Optional[str] = None
-    ) -> List[Player]:
+    def get_free_agents(self, size: int = 50, position: Optional[str] = None) -> List[Player]:
         """Get available free agents.
 
         Args:
@@ -914,7 +912,9 @@ class ESPNClient:
         for espn_player in espn_players:
             # Determine if on waivers or free agent
             acquisition_type = getattr(espn_player, "acquisitionType", "")
-            roster_status = RosterStatus.WAIVERS if acquisition_type == "WAIVERS" else RosterStatus.FREE_AGENT
+            roster_status = (
+                RosterStatus.WAIVERS if acquisition_type == "WAIVERS" else RosterStatus.FREE_AGENT
+            )
 
             players.append(
                 Player(
@@ -977,11 +977,7 @@ class ESPNClient:
 
             # Use rapidfuzz to find close matches
             matches = process.extract(
-                name,
-                player_names,
-                scorer=fuzz.WRatio,
-                limit=5,
-                score_cutoff=fuzzy_threshold
+                name, player_names, scorer=fuzz.WRatio, limit=5, score_cutoff=fuzzy_threshold
             )
 
             suggestions = [match[0] for match in matches]
@@ -1023,7 +1019,11 @@ class ESPNClient:
             if espn_player.playerId == player_id:
                 # Determine if on waivers or free agent
                 acquisition_type = getattr(espn_player, "acquisitionType", "")
-                roster_status = RosterStatus.WAIVERS if acquisition_type == "WAIVERS" else RosterStatus.FREE_AGENT
+                roster_status = (
+                    RosterStatus.WAIVERS
+                    if acquisition_type == "WAIVERS"
+                    else RosterStatus.FREE_AGENT
+                )
 
                 return Player(
                     player_id=espn_player.playerId,

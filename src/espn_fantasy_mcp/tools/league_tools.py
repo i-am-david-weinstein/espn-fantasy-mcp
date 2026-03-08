@@ -1,4 +1,5 @@
 """League-related MCP tools."""
+
 import json
 from mcp.types import Tool
 from espn_fantasy_mcp.espn_client import ESPNClient

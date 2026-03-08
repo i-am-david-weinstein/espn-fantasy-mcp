@@ -1,4 +1,5 @@
 """Roster management MCP tools."""
+
 import json
 from mcp.types import Tool
 from espn_api.baseball.constant import POSITION_MAP
@@ -137,15 +138,17 @@ async def handle_modify_lineup(arguments: dict) -> str:
                     f"Move {idx + 1}: Player {player.name} is currently in slot {current_slot_str}, not {from_slot_str}"
                 )
 
-            move_details.append({
-                "player_id": player_id,
-                "player_name": player.name,
-                "from_slot": from_slot,
-                "from_slot_name": from_slot_str,
-                "to_slot": to_slot,
-                "to_slot_name": POSITION_MAP.get(to_slot, str(to_slot)),
-                "position": player.position,
-            })
+            move_details.append(
+                {
+                    "player_id": player_id,
+                    "player_name": player.name,
+                    "from_slot": from_slot,
+                    "from_slot_name": from_slot_str,
+                    "to_slot": to_slot,
+                    "to_slot_name": POSITION_MAP.get(to_slot, str(to_slot)),
+                    "position": player.position,
+                }
+            )
 
         if validation_errors:
             response = {
