@@ -605,7 +605,7 @@ async def handle_add_free_agent(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         response = {
@@ -708,7 +708,7 @@ async def handle_drop_player(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         response = {
@@ -842,7 +842,7 @@ async def handle_claim_waiver(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         response = {
@@ -921,7 +921,7 @@ async def handle_cancel_waiver(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         response = {
@@ -1064,7 +1064,7 @@ async def handle_propose_trade(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         return json.dumps(
@@ -1138,7 +1138,7 @@ async def handle_cancel_trade(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         return json.dumps(
@@ -1212,7 +1212,7 @@ async def handle_accept_trade(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         return json.dumps(
@@ -1289,7 +1289,7 @@ async def handle_decline_trade(arguments: dict) -> str:
                 error_data = e.response.json()
                 if "messages" in error_data:
                     error_msg = "; ".join(error_data["messages"])
-            except:
+            except Exception:
                 pass
 
         return json.dumps(
