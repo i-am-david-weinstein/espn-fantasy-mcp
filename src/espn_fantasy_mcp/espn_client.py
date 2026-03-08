@@ -1,5 +1,6 @@
 """ESPN Fantasy Baseball API client."""
 
+import json
 import requests
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Tuple, Any
@@ -401,8 +402,6 @@ class ESPNClient:
         Returns:
             Dict with 'pending_waivers' and 'pending_trades' lists.
         """
-        import json as _json
-
         params = {
             "view": "mTransactions2",
             "scoringPeriodId": self.league.currentMatchupPeriod,
@@ -410,7 +409,7 @@ class ESPNClient:
         filters = {
             "transactions": {"filterType": {"value": ["WAIVER", "TRADE_PROPOSAL", "TRADE_ACCEPT"]}}
         }
-        headers = {"x-fantasy-filter": _json.dumps(filters)}
+        headers = {"x-fantasy-filter": json.dumps(filters)}
 
         data = self.league.espn_request.league_get(params=params, headers=headers)
 
