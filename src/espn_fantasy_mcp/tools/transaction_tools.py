@@ -1103,6 +1103,11 @@ async def handle_cancel_trade(arguments: dict) -> str:
 
         if not confirm:
             team = client.get_team(team_id)
+            pending = client.get_pending_transactions(team_id=team_id)
+            trade_details = next(
+                (t for t in pending["pending_trades"] if t["transaction_id"] == transaction_id),
+                None,
+            )
             response = {
                 "success": True,
                 "preview": True,
@@ -1110,6 +1115,7 @@ async def handle_cancel_trade(arguments: dict) -> str:
                 "team_id": team_id,
                 "team_name": team.team_name,
                 "transaction_id": transaction_id,
+                "trade": trade_details,
                 "instructions": "To cancel this trade proposal, call this tool again with confirm=true",
             }
             return json.dumps(response, indent=2)
@@ -1177,6 +1183,11 @@ async def handle_accept_trade(arguments: dict) -> str:
 
         if not confirm:
             team = client.get_team(team_id)
+            pending = client.get_pending_transactions(team_id=team_id)
+            trade_details = next(
+                (t for t in pending["pending_trades"] if t["transaction_id"] == transaction_id),
+                None,
+            )
             response = {
                 "success": True,
                 "preview": True,
@@ -1184,6 +1195,7 @@ async def handle_accept_trade(arguments: dict) -> str:
                 "team_id": team_id,
                 "team_name": team.team_name,
                 "transaction_id": transaction_id,
+                "trade": trade_details,
                 "instructions": "To accept this trade, call this tool again with confirm=true",
             }
             return json.dumps(response, indent=2)
@@ -1252,6 +1264,11 @@ async def handle_decline_trade(arguments: dict) -> str:
 
         if not confirm:
             team = client.get_team(team_id)
+            pending = client.get_pending_transactions(team_id=team_id)
+            trade_details = next(
+                (t for t in pending["pending_trades"] if t["transaction_id"] == transaction_id),
+                None,
+            )
             response = {
                 "success": True,
                 "preview": True,
@@ -1259,6 +1276,7 @@ async def handle_decline_trade(arguments: dict) -> str:
                 "team_id": team_id,
                 "team_name": team.team_name,
                 "transaction_id": transaction_id,
+                "trade": trade_details,
                 "comment": comment,
                 "instructions": "To decline this trade, call this tool again with confirm=true",
             }

@@ -71,6 +71,23 @@ def _make_espn_client(
         "status": "EXECUTED",
         "relatedTransactionId": "trade-proposal-abc",
     }
+    client.get_pending_transactions.return_value = {
+        "pending_waivers": [],
+        "pending_trades": [
+            {
+                "transaction_id": "trade-proposal-abc",
+                "type": "TRADE_PROPOSAL",
+                "status": "PENDING",
+                "is_pending_vote": False,
+                "proposing_team_id": 1,
+                "proposing_team_name": "Team 0",
+                "items": [
+                    {"player_id": 100, "player_name": "Sender Player", "from_team_id": 1, "from_team_name": "Team 0", "to_team_id": 2, "to_team_name": "Team 1"},
+                    {"player_id": 200, "player_name": "Receiver Player", "from_team_id": 2, "from_team_name": "Team 1", "to_team_id": 1, "to_team_name": "Team 0"},
+                ],
+            }
+        ],
+    }
     return client
 
 
@@ -377,6 +394,19 @@ class TestCancelTradePreview:
         response = json.loads(result)
         assert response["transaction_id"] == "trade-proposal-abc"
 
+    @pytest.mark.asyncio
+    @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
+    async def test_preview_includes_trade_details(self, mock_client_class, mock_env_vars):
+        mock_client_class.return_value = _make_espn_client()
+        result = await transaction_tools.handle_cancel_trade({
+            "league_id": "123456", "team_id": 0,
+            "transaction_id": "trade-proposal-abc",
+        })
+        response = json.loads(result)
+        assert response["trade"] is not None
+        assert response["trade"]["transaction_id"] == "trade-proposal-abc"
+        assert len(response["trade"]["items"]) == 2
+
 
 @pytest.mark.unit
 class TestCancelTradeExecute:
@@ -451,6 +481,19 @@ class TestAcceptTradePreview:
             "transaction_id": "trade-proposal-abc",
         })
         client.accept_trade.assert_not_called()
+
+    @pytest.mark.asyncio
+    @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
+    async def test_preview_includes_trade_details(self, mock_client_class, mock_env_vars):
+        mock_client_class.return_value = _make_espn_client()
+        result = await transaction_tools.handle_accept_trade({
+            "league_id": "123456", "team_id": 1,
+            "transaction_id": "trade-proposal-abc",
+        })
+        response = json.loads(result)
+        assert response["trade"] is not None
+        assert response["trade"]["transaction_id"] == "trade-proposal-abc"
+        assert len(response["trade"]["items"]) == 2
 
 
 @pytest.mark.unit
@@ -538,6 +581,19 @@ class TestDeclineTradePreview:
         })
         response = json.loads(result)
         assert response["comment"] == "No thanks"
+
+    @pytest.mark.asyncio
+    @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
+    async def test_preview_includes_trade_details(self, mock_client_class, mock_env_vars):
+        mock_client_class.return_value = _make_espn_client()
+        result = await transaction_tools.handle_decline_trade({
+            "league_id": "123456", "team_id": 1,
+            "transaction_id": "trade-proposal-abc",
+        })
+        response = json.loads(result)
+        assert response["trade"] is not None
+        assert response["trade"]["transaction_id"] == "trade-proposal-abc"
+        assert len(response["trade"]["items"]) == 2
 
 
 @pytest.mark.unit
