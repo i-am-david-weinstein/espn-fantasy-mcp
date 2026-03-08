@@ -1,4 +1,5 @@
 """Data models for ESPN Fantasy Baseball."""
+
 from dataclasses import dataclass, asdict, field
 from enum import Enum
 from typing import List, Dict, Optional, Any
@@ -6,6 +7,7 @@ from typing import List, Dict, Optional, Any
 
 class RosterStatus(str, Enum):
     """Player roster status in fantasy league."""
+
     ROSTERED = "ROSTERED"
     FREE_AGENT = "FREE_AGENT"
     WAIVERS = "WAIVERS"
@@ -88,8 +90,12 @@ class LeagueSettings:
     restriction_type: Optional[str] = None
 
     # Computed/helper fields
-    stat_categories: Dict[str, List[str]] = field(default_factory=dict)  # Actual scoring categories used by this league
-    stat_id_map: Dict[str, str] = field(default_factory=dict)  # Map of stat IDs to readable names (from STATS_MAP)
+    stat_categories: Dict[str, List[str]] = field(
+        default_factory=dict
+    )  # Actual scoring categories used by this league
+    stat_id_map: Dict[str, str] = field(
+        default_factory=dict
+    )  # Map of stat IDs to readable names (from STATS_MAP)
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""

@@ -1,4 +1,5 @@
 """Transaction management MCP tools."""
+
 import json
 from mcp.types import Tool
 from espn_fantasy_mcp.espn_client import ESPNClient
@@ -318,11 +319,11 @@ async def handle_add_free_agent(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
@@ -421,11 +422,11 @@ async def handle_drop_player(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
@@ -499,7 +500,7 @@ async def handle_claim_waiver(arguments: dict) -> str:
                 "position": add_player.position,
                 "pro_team": add_player.team,
                 "roster_status": add_player.roster_status,
-            }
+            },
         }
 
         if drop_player:
@@ -555,11 +556,11 @@ async def handle_claim_waiver(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
@@ -634,11 +635,11 @@ async def handle_cancel_waiver(arguments: dict) -> str:
     except Exception as e:
         # Handle HTTP errors specially to provide better error messages
         error_msg = str(e)
-        if hasattr(e, 'response') and hasattr(e.response, 'json'):
+        if hasattr(e, "response") and hasattr(e.response, "json"):
             try:
                 error_data = e.response.json()
-                if 'messages' in error_data:
-                    error_msg = '; '.join(error_data['messages'])
+                if "messages" in error_data:
+                    error_msg = "; ".join(error_data["messages"])
             except:
                 pass
 
