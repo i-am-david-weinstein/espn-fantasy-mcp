@@ -72,12 +72,8 @@ class TestPlayerTools:
     @pytest.mark.asyncio
     async def test_handle_get_free_agents_missing_league_id(self, monkeypatch):
         """Test handle_get_free_agents without league_id."""
-        monkeypatch.delenv("ESPN_LEAGUE_ID", raising=False)
-
-        # Need to reload the config module to pick up the change
-        import importlib
-        import espn_fantasy_mcp.config
-        importlib.reload(espn_fantasy_mcp.config)
+        from espn_fantasy_mcp.config import Config
+        monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await player_tools.handle_get_free_agents({})
@@ -159,12 +155,8 @@ class TestPlayerTools:
     @pytest.mark.asyncio
     async def test_handle_get_player_info_missing_league_id(self, monkeypatch):
         """Test handle_get_player_info without league_id."""
-        monkeypatch.delenv("ESPN_LEAGUE_ID", raising=False)
-
-        # Need to reload the config module to pick up the change
-        import importlib
-        import espn_fantasy_mcp.config
-        importlib.reload(espn_fantasy_mcp.config)
+        from espn_fantasy_mcp.config import Config
+        monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await player_tools.handle_get_player_info({

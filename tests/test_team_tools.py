@@ -64,11 +64,8 @@ class TestTeamTools:
     @pytest.mark.asyncio
     async def test_handle_get_team_missing_league_id(self, monkeypatch):
         """Test handle_get_team without league_id."""
-        monkeypatch.delenv("ESPN_LEAGUE_ID", raising=False)
-
-        import importlib
-        import espn_fantasy_mcp.config
-        importlib.reload(espn_fantasy_mcp.config)
+        from espn_fantasy_mcp.config import Config
+        monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await team_tools.handle_get_team({
@@ -129,11 +126,8 @@ class TestTeamTools:
     @pytest.mark.asyncio
     async def test_handle_get_roster_missing_league_id(self, monkeypatch):
         """Test handle_get_roster without league_id."""
-        monkeypatch.delenv("ESPN_LEAGUE_ID", raising=False)
-
-        import importlib
-        import espn_fantasy_mcp.config
-        importlib.reload(espn_fantasy_mcp.config)
+        from espn_fantasy_mcp.config import Config
+        monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await team_tools.handle_get_roster({
