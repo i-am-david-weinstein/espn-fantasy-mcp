@@ -1,6 +1,8 @@
 """ESPN Fantasy Baseball API client."""
 
+import json
 import requests
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Tuple, Any
 from urllib.parse import unquote
 from rapidfuzz import process, fuzz
@@ -385,6 +387,331 @@ class ESPNClient:
         }
 
         # Make the request
+        return self._make_write_request("/transactions/", payload)
+
+    def get_pending_transactions(
+        self,
+        team_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Get pending waiver claims and trade proposals.
+
+        Args:
+            team_id: Optional team ID (0-based index) to filter to transactions
+                     relevant to a specific team. If None, returns all pending.
+
+        Returns:
+            Dict with 'pending_waivers' and 'pending_trades' lists.
+        """
+        params = {
+            "view": "mTransactions2",
+            "scoringPeriodId": self.league.currentMatchupPeriod,
+        }
+        filters = {
+            "transactions": {"filterType": {"value": ["WAIVER", "TRADE_PROPOSAL", "TRADE_ACCEPT"]}}
+        }
+        headers = {"x-fantasy-filter": json.dumps(filters)}
+
+        data = self.league.espn_request.league_get(params=params, headers=headers)
+
+        if "transactions" not in data:
+            return {"pending_waivers": [], "pending_trades": []}
+
+        # Resolve actual ESPN team ID for filtering
+        actual_team_id = None
+        if team_id is not None:
+            actual_team_id = self.league.teams[team_id].team_id
+
+        team_map = {t.team_id: t.team_name for t in self.league.teams}
+        player_map = self._get_player_map()
+
+        all_txns = data["transactions"]
+
+        # Index by ID so TRADE_ACCEPT can look up the original proposal's items
+        # (TRADE_ACCEPT itself carries no items).
+        txn_by_id = {txn["id"]: txn for txn in all_txns}
+
+        # Build a set of transaction IDs superseded by a later action
+        # (cancellation, acceptance, or decline). Skip the originals to avoid
+        # showing both "PENDING" and "CANCELED/ACCEPTED" for the same trade.
+        superseded_ids = {
+            txn["relatedTransactionId"] for txn in all_txns if txn.get("relatedTransactionId")
+        }
+
+        pending_waivers = []
+        pending_trades = []
+
+        for txn in all_txns:
+            if txn.get("id") in superseded_ids:
+                continue
+
+            txn_type = txn.get("type")
+            txn_team_id = txn.get("teamId")
+
+            if txn_type == "WAIVER":
+                if actual_team_id is not None and txn_team_id != actual_team_id:
+                    continue
+
+                items = txn.get("items", [])
+                add_player = None
+                drop_player = None
+                for item in items:
+                    pid = item.get("playerId")
+                    name = player_map.get(pid, f"Player {pid}")
+                    if item.get("type") == "ADD":
+                        add_player = {"player_id": pid, "player_name": name}
+                    elif item.get("type") == "DROP":
+                        drop_player = {"player_id": pid, "player_name": name}
+
+                pending_waivers.append(
+                    {
+                        "transaction_id": txn.get("id"),
+                        "status": txn.get("status"),
+                        "team_id": txn_team_id,
+                        "team_name": team_map.get(txn_team_id, f"Team {txn_team_id}"),
+                        "bid_amount": txn.get("bidAmount", 0),
+                        "scoring_period_id": txn.get("scoringPeriodId"),
+                        "add_player": add_player,
+                        "drop_player": drop_player,
+                    }
+                )
+
+            elif txn_type in ("TRADE_PROPOSAL", "TRADE_ACCEPT"):
+                # TRADE_ACCEPT has no items — look them up on the original proposal.
+                if txn_type == "TRADE_ACCEPT":
+                    original = txn_by_id.get(txn.get("relatedTransactionId"))
+                    items = original.get("items", []) if original else []
+                    proposing_team_id = original.get("teamId") if original else None
+                else:
+                    items = txn.get("items", [])
+                    proposing_team_id = txn_team_id
+
+                if actual_team_id is not None:
+                    involved = any(
+                        item.get("fromTeamId") == actual_team_id
+                        or item.get("toTeamId") == actual_team_id
+                        for item in items
+                    )
+                    if not involved:
+                        continue
+
+                trade_items = []
+                for item in items:
+                    pid = item.get("playerId")
+                    name = player_map.get(pid, f"Player {pid}")
+                    from_id = item.get("fromTeamId")
+                    to_id = item.get("toTeamId")
+                    trade_items.append(
+                        {
+                            "player_id": pid,
+                            "player_name": name,
+                            "from_team_id": from_id,
+                            "from_team_name": team_map.get(from_id, f"Team {from_id}"),
+                            "to_team_id": to_id,
+                            "to_team_name": team_map.get(to_id, f"Team {to_id}"),
+                        }
+                    )
+
+                pending_trades.append(
+                    {
+                        "transaction_id": txn.get("id"),
+                        "type": txn_type,
+                        "status": txn.get("status"),
+                        "is_pending_vote": txn_type == "TRADE_ACCEPT",
+                        "proposing_team_id": proposing_team_id,
+                        "proposing_team_name": (
+                            team_map.get(proposing_team_id, f"Team {proposing_team_id}")
+                            if proposing_team_id is not None
+                            else None
+                        ),
+                        "scoring_period_id": txn.get("scoringPeriodId"),
+                        "comment": txn.get("comment"),
+                        "expiration_date": txn.get("expirationDate"),
+                        "team_actions": txn.get("teamActions", {}),
+                        "items": trade_items,
+                    }
+                )
+
+        return {
+            "pending_waivers": pending_waivers,
+            "pending_trades": pending_trades,
+        }
+
+    def propose_trade(
+        self,
+        team_id: int,
+        receiving_team_id: int,
+        send_player_ids: List[int],
+        receive_player_ids: List[int],
+        expiration_days: int = 7,
+        comment: Optional[str] = None,
+        scoring_period_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Propose a trade with another team.
+
+        Args:
+            team_id: Proposing team ID (0-based index)
+            receiving_team_id: Receiving team ID (0-based index)
+            send_player_ids: Player IDs the proposing team is sending
+            receive_player_ids: Player IDs the proposing team wants to receive
+            expiration_days: Days until the trade offer expires (default 7)
+            comment: Optional message to include with trade
+            scoring_period_id: Scoring period (defaults to current)
+
+        Returns:
+            Transaction response with status="PENDING" and transaction ID
+        """
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        proposing_team = self.league.teams[team_id]
+        proposing_actual_id = proposing_team.team_id
+
+        receiving_team = self.league.teams[receiving_team_id]
+        receiving_actual_id = receiving_team.team_id
+
+        items = []
+        for player_id in send_player_ids:
+            items.append(
+                {
+                    "playerId": player_id,
+                    "type": "TRADE",
+                    "fromTeamId": proposing_actual_id,
+                    "toTeamId": receiving_actual_id,
+                }
+            )
+        for player_id in receive_player_ids:
+            items.append(
+                {
+                    "playerId": player_id,
+                    "type": "TRADE",
+                    "fromTeamId": receiving_actual_id,
+                    "toTeamId": proposing_actual_id,
+                }
+            )
+
+        expiration_date = (datetime.now(timezone.utc) + timedelta(days=expiration_days)).strftime(
+            "%Y-%m-%dT%H:%M:%S.000Z"
+        )
+
+        payload = {
+            "isLeagueManager": False,
+            "teamId": proposing_actual_id,
+            "type": "TRADE_PROPOSAL",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "EXECUTE",
+            "items": items,
+            "expirationDate": expiration_date,
+        }
+        if comment:
+            payload["comment"] = comment
+
+        return self._make_write_request("/transactions/", payload)
+
+    def cancel_trade(
+        self,
+        team_id: int,
+        transaction_id: str,
+        scoring_period_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Cancel a pending trade proposal you sent.
+
+        Args:
+            team_id: Proposing team ID (0-based index)
+            transaction_id: Transaction ID from the original trade proposal
+            scoring_period_id: Scoring period (defaults to current)
+
+        Returns:
+            Transaction response with status="CANCELED"
+        """
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,
+            "type": "TRADE_PROPOSAL",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "CANCEL",
+            "relatedTransactionId": transaction_id,
+        }
+
+        return self._make_write_request("/transactions/", payload)
+
+    def accept_trade(
+        self,
+        team_id: int,
+        transaction_id: str,
+        scoring_period_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Accept a pending trade offer.
+
+        Args:
+            team_id: Receiving team ID (0-based index)
+            transaction_id: Transaction ID of the trade proposal to accept
+            scoring_period_id: Scoring period (defaults to current)
+
+        Returns:
+            Transaction response from ESPN API
+        """
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,
+            "type": "TRADE_ACCEPT",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "EXECUTE",
+            "relatedTransactionId": transaction_id,
+        }
+
+        return self._make_write_request("/transactions/", payload)
+
+    def decline_trade(
+        self,
+        team_id: int,
+        transaction_id: str,
+        comment: Optional[str] = None,
+        scoring_period_id: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Decline a trade offer.
+
+        Args:
+            team_id: Receiving team ID (0-based index)
+            transaction_id: Transaction ID of the trade proposal to decline
+            comment: Optional reason for declining
+            scoring_period_id: Scoring period (defaults to current)
+
+        Returns:
+            Transaction response with status="EXECUTED"
+        """
+        if scoring_period_id is None:
+            scoring_period_id = self.league.currentMatchupPeriod
+
+        espn_team = self.league.teams[team_id]
+        actual_team_id = espn_team.team_id
+
+        payload = {
+            "isLeagueManager": False,
+            "teamId": actual_team_id,
+            "type": "TRADE_DECLINE",
+            "memberId": self.swid,
+            "scoringPeriodId": scoring_period_id,
+            "executionType": "EXECUTE",
+            "relatedTransactionId": transaction_id,
+        }
+        if comment:
+            payload["comment"] = comment
+
         return self._make_write_request("/transactions/", payload)
 
     def get_league_settings(self) -> LeagueSettings:

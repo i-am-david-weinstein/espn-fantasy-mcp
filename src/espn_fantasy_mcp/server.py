@@ -44,7 +44,17 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
             result = await player_tools.handle_tool(name, arguments)
         elif name in ["modify_lineup"]:
             result = await roster_tools.handle_tool(name, arguments)
-        elif name in ["add_free_agent", "drop_player", "claim_waiver", "cancel_waiver"]:
+        elif name in [
+            "get_pending_transactions",
+            "add_free_agent",
+            "drop_player",
+            "claim_waiver",
+            "cancel_waiver",
+            "propose_trade",
+            "cancel_trade",
+            "accept_trade",
+            "decline_trade",
+        ]:
             result = await transaction_tools.handle_tool(name, arguments)
         else:
             raise ValueError(f"Unknown tool: {name}")
