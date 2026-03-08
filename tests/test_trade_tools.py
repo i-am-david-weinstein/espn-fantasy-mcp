@@ -828,6 +828,30 @@ class TestGetPendingTransactionsESPNClient:
         assert len(t["items"]) == 2
         player_ids = {item["player_id"] for item in t["items"]}
         assert player_ids == {100, 200}
+        # proposing_team_id should come from the original, not the accepting team
+        assert t["proposing_team_id"] == 1
+
+    @patch("espn_fantasy_mcp.espn_client.League")
+    def test_trade_accept_missing_original_has_none_proposing_team(self, mock_league_class):
+        """TRADE_ACCEPT with no matching original sets proposing_team_id to None."""
+        accept = {
+            "id": "accept-orphan", "type": "TRADE_ACCEPT", "status": "PENDING",
+            "teamId": 2, "scoringPeriodId": 5,
+            "relatedTransactionId": "nonexistent-id",
+            "items": [],
+        }
+        league = _make_league_with_transactions([accept])
+        mock_league_class.return_value = league
+
+        from espn_fantasy_mcp.espn_client import ESPNClient
+        client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
+        result = client.get_pending_transactions()
+
+        assert len(result["pending_trades"]) == 1
+        t = result["pending_trades"][0]
+        assert t["proposing_team_id"] is None
+        assert t["proposing_team_name"] is None
+        assert t["items"] == []
 
     @patch("espn_fantasy_mcp.espn_client.League")
     def test_team_filter_excludes_unrelated_waivers(self, mock_league_class):

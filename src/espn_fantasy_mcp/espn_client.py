@@ -478,9 +478,9 @@ class ESPNClient:
             elif txn_type in ("TRADE_PROPOSAL", "TRADE_ACCEPT"):
                 # TRADE_ACCEPT has no items — look them up on the original proposal.
                 if txn_type == "TRADE_ACCEPT":
-                    original = txn_by_id.get(txn.get("relatedTransactionId"), {})
-                    items = original.get("items", [])
-                    proposing_team_id = original.get("teamId", txn_team_id)
+                    original = txn_by_id.get(txn.get("relatedTransactionId"))
+                    items = original.get("items", []) if original else []
+                    proposing_team_id = original.get("teamId") if original else None
                 else:
                     items = txn.get("items", [])
                     proposing_team_id = txn_team_id
@@ -518,8 +518,10 @@ class ESPNClient:
                         "status": txn.get("status"),
                         "is_pending_vote": txn_type == "TRADE_ACCEPT",
                         "proposing_team_id": proposing_team_id,
-                        "proposing_team_name": team_map.get(
-                            proposing_team_id, f"Team {proposing_team_id}"
+                        "proposing_team_name": (
+                            team_map.get(proposing_team_id, f"Team {proposing_team_id}")
+                            if proposing_team_id is not None
+                            else None
                         ),
                         "scoring_period_id": txn.get("scoringPeriodId"),
                         "comment": txn.get("comment"),
