@@ -84,14 +84,12 @@ class ESPNClient:
             "X-Fantasy-Source": "kona",
         }
 
-        cookies = {
-            "espn_s2": self.espn_s2,
-            "SWID": self.swid,
-        }
+        cookies = {k: v for k, v in {"espn_s2": self.espn_s2, "SWID": self.swid}.items() if v is not None}
 
         response = requests.post(url, json=data, headers=headers, cookies=cookies, params=params)
         response.raise_for_status()
-        return response.json()
+        result: Dict[str, Any] = response.json()
+        return result
 
     def modify_lineup(
         self, team_id: int, moves: List[Dict[str, Any]], scoring_period_id: Optional[int] = None
