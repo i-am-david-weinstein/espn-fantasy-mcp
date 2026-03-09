@@ -14,6 +14,8 @@ NOTE: current support is limited to Fantasy Baseball
 - Look up players by name with fuzzy matching
 - Access player statistics (actual and projected)
 - View player ownership status (rostered, free agent, waivers)
+- Add/drop players and submit waiver claims
+- Propose, accept, decline, and cancel trades
 
 ## Installation and Setup
 
@@ -297,6 +299,139 @@ Move player 4140653 from bench (slot 16) to pitcher slot (slot 13) for my team
 - The tool validates that each player is on the roster and currently in the specified `from_slot`
 - Returns validation errors if any moves are invalid, without making any changes
 
+### Transaction Tools
+
+All transaction tools use a **confirmation pattern**: the first call (with `confirm=false`, the default) returns a preview; the second call (with `confirm=true`) executes the action.
+
+#### `get_pending_transactions`
+Get waiver claims and trade proposals for a team, including all statuses (PENDING, EXECUTED, CANCELED). For trades, returns both sent and received proposals.
+
+**Parameters:**
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `team_id` (optional): Team ID (0-based index). If omitted, returns all transactions league-wide.
+- `season_year` (optional): Season year
+
+**Example:**
+```
+Show me all pending transactions for my team
+```
+
+#### `add_free_agent`
+Add a free agent directly to your team (bypassing waivers). Optionally drop a player in the same transaction.
+
+**Parameters:**
+- `team_id` (required): Team ID (0-based index)
+- `add_player_id` (required): ESPN player ID to add
+- `drop_player_id` (optional): ESPN player ID to drop (required if roster is full)
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, executes.
+
+**Example:**
+```
+Add player 4140653 to my team, dropping player 3916387
+```
+
+#### `drop_player`
+Drop a player from your team.
+
+**Parameters:**
+- `team_id` (required): Team ID (0-based index)
+- `player_id` (required): ESPN player ID to drop
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, executes.
+
+**Example:**
+```
+Drop player 3916387 from my team
+```
+
+#### `claim_waiver`
+Submit a waiver claim with an optional FAAB bid. Claims are processed during waiver periods and remain pending until processed.
+
+**Parameters:**
+- `team_id` (required): Team ID (0-based index)
+- `add_player_id` (required): ESPN player ID to claim off waivers
+- `drop_player_id` (optional): ESPN player ID to drop (required if roster is full)
+- `bid_amount` (optional): FAAB bid amount (defaults to 0)
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, submits the claim.
+
+**Example:**
+```
+Put in a $15 waiver claim for player 4140653, dropping player 3916387
+```
+
+#### `cancel_waiver`
+Cancel a pending waiver claim. Requires the transaction ID from the original claim.
+
+**Parameters:**
+- `team_id` (required): Team ID (0-based index)
+- `transaction_id` (required): Transaction ID from the original waiver claim
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, cancels the claim.
+
+#### `propose_trade`
+Propose a trade with another team. Returns a transaction ID that can be used to cancel the proposal later.
+
+**Parameters:**
+- `team_id` (required): Your team ID (0-based index)
+- `receiving_team_id` (required): The other team's ID (0-based index)
+- `send_player_ids` (required): List of ESPN player IDs you are sending
+- `receive_player_ids` (required): List of ESPN player IDs you want to receive
+- `comment` (optional): Message to include with the trade offer
+- `expiration_days` (optional): Days until the offer expires (default: 7)
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, sends the proposal.
+
+**Example:**
+```
+Propose a trade to team 3: send player 4140653, receive player 4361618
+```
+
+#### `cancel_trade`
+Cancel a pending trade proposal you sent. Requires the transaction ID from the original proposal.
+
+**Parameters:**
+- `team_id` (required): Your team ID (0-based index)
+- `transaction_id` (required): Transaction ID from the original trade proposal
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, cancels the proposal.
+
+#### `accept_trade`
+Accept a pending trade offer from another team. Requires the transaction ID from the trade proposal.
+
+**Parameters:**
+- `team_id` (required): Your team ID (0-based index)
+- `transaction_id` (required): Transaction ID of the trade proposal to accept
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, accepts the trade.
+
+#### `decline_trade`
+Decline a trade offer from another team.
+
+**Parameters:**
+- `team_id` (required): Your team ID (0-based index)
+- `transaction_id` (required): Transaction ID of the trade proposal to decline
+- `comment` (optional): Reason for declining
+- `league_id` (optional): ESPN League ID (defaults to configured league)
+- `scoring_period_id` (optional): Scoring period (defaults to current)
+- `season_year` (optional): Season year
+- `confirm` (optional): If `false` (default), previews. If `true`, declines the trade.
+
 ## Usage Examples
 
 Once configured with Claude Code:
@@ -367,7 +502,8 @@ espn-fantasy-mcp/
 │       ├── league_tools.py
 │       ├── team_tools.py
 │       ├── player_tools.py
-│       └── roster_tools.py
+│       ├── roster_tools.py
+│       └── transaction_tools.py
 ├── tests/
 ├── docs/                 # Additional documentation
 ├── pyproject.toml
@@ -376,7 +512,6 @@ espn-fantasy-mcp/
 
 ## Future Enhancements
 
-- Add/drop players and trades
 - Transaction history
 - Additional sports (Football, Basketball, Hockey)
 
