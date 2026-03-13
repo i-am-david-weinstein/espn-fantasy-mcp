@@ -126,7 +126,7 @@ async def get_player_info(
 @mcp.tool()
 async def modify_lineup(
     team_id: Optional[int] = None,
-    moves: Optional[list] = None,
+    moves: Optional[list[dict]] = None,
     league_id: Optional[str] = None,
     scoring_period_id: Optional[int] = None,
     season_year: Optional[int] = None,
@@ -309,8 +309,8 @@ async def cancel_waiver(
 async def propose_trade(
     team_id: Optional[int] = None,
     receiving_team_id: Optional[int] = None,
-    send_player_ids: Optional[list] = None,
-    receive_player_ids: Optional[list] = None,
+    send_player_ids: Optional[list[int]] = None,
+    receive_player_ids: Optional[list[int]] = None,
     comment: Optional[str] = None,
     expiration_days: Optional[int] = None,
     league_id: Optional[str] = None,
@@ -340,7 +340,7 @@ async def propose_trade(
             "send_player_ids": send_player_ids or [],
             "receive_player_ids": receive_player_ids or [],
             "comment": comment,
-            "expiration_days": expiration_days if expiration_days is not None else 7,
+            "expiration_days": expiration_days,
             "scoring_period_id": scoring_period_id,
             "season_year": season_year,
             "confirm": confirm,
