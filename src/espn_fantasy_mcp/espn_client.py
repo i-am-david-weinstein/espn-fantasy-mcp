@@ -101,7 +101,7 @@ class ESPNClient:
         """Modify team lineup by moving players between slots.
 
         Args:
-            team_id: Team ID (0-based index for consistency with read operations)
+            team_id: Team ID (1-based index for consistency with read operations)
             moves: List of move dictionaries, each containing:
                 - player_id: ESPN player ID
                 - from_slot: Current lineup slot ID
@@ -114,13 +114,13 @@ class ESPNClient:
         Example:
             # Move one player from bench (16) to starting lineup (0)
             client.modify_lineup(
-                team_id=3,  # 0-based index (4th team)
+                team_id=3,  # 1-based index (4th team)
                 moves=[{"player_id": 12345, "from_slot": 16, "to_slot": 0}]
             )
 
             # Swap two players
             client.modify_lineup(
-                team_id=3,  # 0-based index (4th team)
+                team_id=3,  # 1-based index (4th team)
                 moves=[
                     {"player_id": 12345, "from_slot": 0, "to_slot": 16},
                     {"player_id": 67890, "from_slot": 16, "to_slot": 0}
@@ -132,8 +132,8 @@ class ESPNClient:
             scoring_period_id = self.league.currentMatchupPeriod
 
         # Get the actual ESPN team ID from the team object
-        # team_id parameter is 0-based index, but ESPN API needs actual team_id
-        espn_team = self.league.teams[team_id]
+        # team_id parameter is 1-based index, but ESPN API needs actual team_id
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         # Build items array for the transaction
@@ -172,7 +172,7 @@ class ESPNClient:
         """Add a free agent, optionally dropping a player.
 
         Args:
-            team_id: Team ID (0-based index for consistency with read operations)
+            team_id: Team ID (1-based index for consistency with read operations)
             add_player_id: ESPN player ID to add
             drop_player_id: Optional ESPN player ID to drop (required if roster is full)
             scoring_period_id: Scoring period (week) for the transaction (defaults to current)
@@ -199,7 +199,7 @@ class ESPNClient:
             scoring_period_id = self.league.currentMatchupPeriod
 
         # Get the actual ESPN team ID from the team object
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         # Build items array for the transaction
@@ -232,7 +232,7 @@ class ESPNClient:
         """Drop a player from the roster.
 
         Args:
-            team_id: Team ID (0-based index for consistency with read operations)
+            team_id: Team ID (1-based index for consistency with read operations)
             player_id: ESPN player ID to drop
             scoring_period_id: Scoring period (week) for the transaction (defaults to current)
 
@@ -250,7 +250,7 @@ class ESPNClient:
             scoring_period_id = self.league.currentMatchupPeriod
 
         # Get the actual ESPN team ID from the team object
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         # Build items array for the transaction
@@ -281,7 +281,7 @@ class ESPNClient:
         """Submit a waiver claim with optional FAAB bid.
 
         Args:
-            team_id: Team ID (0-based index for consistency with read operations)
+            team_id: Team ID (1-based index for consistency with read operations)
             add_player_id: ESPN player ID to claim off waivers
             drop_player_id: Optional ESPN player ID to drop (required if roster is full)
             bid_amount: FAAB bid amount (defaults to 0 for free waiver claim)
@@ -310,7 +310,7 @@ class ESPNClient:
             scoring_period_id = self.league.currentMatchupPeriod
 
         # Get the actual ESPN team ID from the team object
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         # Build items array for the transaction
@@ -344,7 +344,7 @@ class ESPNClient:
         """Cancel a pending waiver claim.
 
         Args:
-            team_id: Team ID (0-based index for consistency with read operations)
+            team_id: Team ID (1-based index for consistency with read operations)
             transaction_id: Transaction ID from the original waiver claim response
             scoring_period_id: Scoring period (week) for the transaction (defaults to current)
 
@@ -372,7 +372,7 @@ class ESPNClient:
             scoring_period_id = self.league.currentMatchupPeriod
 
         # Get the actual ESPN team ID from the team object
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         # Build transaction payload
@@ -396,7 +396,7 @@ class ESPNClient:
         """Get pending waiver claims and trade proposals.
 
         Args:
-            team_id: Optional team ID (0-based index) to filter to transactions
+            team_id: Optional team ID (1-based index) to filter to transactions
                      relevant to a specific team. If None, returns all pending.
 
         Returns:
@@ -419,7 +419,7 @@ class ESPNClient:
         # Resolve actual ESPN team ID for filtering
         actual_team_id = None
         if team_id is not None:
-            actual_team_id = self.league.teams[team_id].team_id
+            actual_team_id = self.league.teams[team_id - 1].team_id
 
         team_map = {t.team_id: t.team_name for t in self.league.teams}
         player_map = self._get_player_map()
@@ -549,8 +549,8 @@ class ESPNClient:
         """Propose a trade with another team.
 
         Args:
-            team_id: Proposing team ID (0-based index)
-            receiving_team_id: Receiving team ID (0-based index)
+            team_id: Proposing team ID (1-based index)
+            receiving_team_id: Receiving team ID (1-based index)
             send_player_ids: Player IDs the proposing team is sending
             receive_player_ids: Player IDs the proposing team wants to receive
             expiration_days: Days until the trade offer expires (default 7)
@@ -563,10 +563,10 @@ class ESPNClient:
         if scoring_period_id is None:
             scoring_period_id = self.league.currentMatchupPeriod
 
-        proposing_team = self.league.teams[team_id]
+        proposing_team = self.league.teams[team_id - 1]
         proposing_actual_id = proposing_team.team_id
 
-        receiving_team = self.league.teams[receiving_team_id]
+        receiving_team = self.league.teams[receiving_team_id - 1]
         receiving_actual_id = receiving_team.team_id
 
         items = []
@@ -617,7 +617,7 @@ class ESPNClient:
         """Cancel a pending trade proposal you sent.
 
         Args:
-            team_id: Proposing team ID (0-based index)
+            team_id: Proposing team ID (1-based index)
             transaction_id: Transaction ID from the original trade proposal
             scoring_period_id: Scoring period (defaults to current)
 
@@ -627,7 +627,7 @@ class ESPNClient:
         if scoring_period_id is None:
             scoring_period_id = self.league.currentMatchupPeriod
 
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         payload = {
@@ -651,7 +651,7 @@ class ESPNClient:
         """Accept a pending trade offer.
 
         Args:
-            team_id: Receiving team ID (0-based index)
+            team_id: Receiving team ID (1-based index)
             transaction_id: Transaction ID of the trade proposal to accept
             scoring_period_id: Scoring period (defaults to current)
 
@@ -661,7 +661,7 @@ class ESPNClient:
         if scoring_period_id is None:
             scoring_period_id = self.league.currentMatchupPeriod
 
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         payload = {
@@ -686,7 +686,7 @@ class ESPNClient:
         """Decline a trade offer.
 
         Args:
-            team_id: Receiving team ID (0-based index)
+            team_id: Receiving team ID (1-based index)
             transaction_id: Transaction ID of the trade proposal to decline
             comment: Optional reason for declining
             scoring_period_id: Scoring period (defaults to current)
@@ -697,7 +697,7 @@ class ESPNClient:
         if scoring_period_id is None:
             scoring_period_id = self.league.currentMatchupPeriod
 
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         actual_team_id = espn_team.team_id
 
         payload = {
@@ -810,12 +810,12 @@ class ESPNClient:
         """Get specific team information.
 
         Args:
-            team_id: Team ID (0-based index in teams list)
+            team_id: Team ID (1-based index in teams list)
 
         Returns:
             Team object
         """
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
 
         owners = getattr(espn_team, "owners", [])
         primary_owner = owners[0] if owners else "Unknown"
@@ -847,7 +847,7 @@ class ESPNClient:
 
             teams.append(
                 Team(
-                    team_id=idx,
+                    team_id=idx + 1,
                     team_name=espn_team.team_name,
                     team_abbrev=espn_team.team_abbrev,
                     owners=owners,
@@ -869,12 +869,12 @@ class ESPNClient:
         """Get roster for a team.
 
         Args:
-            team_id: Team ID (0-based index in teams list)
+            team_id: Team ID (1-based index in teams list)
 
         Returns:
             List of Player objects
         """
-        espn_team = self.league.teams[team_id]
+        espn_team = self.league.teams[team_id - 1]
         players = []
 
         for espn_player in espn_team.roster:
@@ -1008,7 +1008,7 @@ class ESPNClient:
                         injury_status=getattr(espn_player, "injuryStatus", "ACTIVE"),
                         stats=getattr(espn_player, "stats", {}),
                         roster_status=RosterStatus.ROSTERED,
-                        fantasy_team_id=team_idx,
+                        fantasy_team_id=team_idx + 1,
                         fantasy_team_name=espn_team.team_name,
                         fantasy_team_abbrev=espn_team.team_abbrev,
                     )

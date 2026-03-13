@@ -1,4 +1,5 @@
 """Unit tests for trade tools and get_pending_transactions."""
+
 import json
 import pytest
 from unittest.mock import Mock, patch, MagicMock
@@ -9,7 +10,10 @@ from espn_fantasy_mcp.tools import transaction_tools
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_roster_player(player_id: int, name: str = "Player", team: str = "NYY", position: str = "OF") -> Mock:
+
+def _make_roster_player(
+    player_id: int, name: str = "Player", team: str = "NYY", position: str = "OF"
+) -> Mock:
     p = Mock()
     p.player_id = player_id
     p.name = name
@@ -19,14 +23,14 @@ def _make_roster_player(player_id: int, name: str = "Player", team: str = "NYY",
 
 
 def _make_espn_client(
-    proposing_team_id: int = 0,
-    receiving_team_id: int = 1,
+    proposing_team_id: int = 1,
+    receiving_team_id: int = 2,
     proposing_roster: list | None = None,
     receiving_roster: list | None = None,
 ) -> Mock:
     """Return a mock ESPNClient pre-configured for trade tests.
 
-    team IDs here are the 0-based indices used by the MCP tool layer,
+    team IDs here are the 1-based indices used by the MCP tool layer,
     matching what handle_propose_trade passes to client.get_roster().
     """
     client = Mock()
@@ -37,6 +41,7 @@ def _make_espn_client(
         t = Mock()
         t.team_name = f"Team {tid}"
         return t
+
     client.get_team.side_effect = _get_team
 
     if proposing_roster is None:
@@ -48,6 +53,7 @@ def _make_espn_client(
         if tid == proposing_team_id:
             return proposing_roster
         return receiving_roster
+
     client.get_roster.side_effect = _get_roster
 
     client.propose_trade.return_value = {
@@ -82,8 +88,22 @@ def _make_espn_client(
                 "proposing_team_id": 1,
                 "proposing_team_name": "Team 0",
                 "items": [
-                    {"player_id": 100, "player_name": "Sender Player", "from_team_id": 1, "from_team_name": "Team 0", "to_team_id": 2, "to_team_name": "Team 1"},
-                    {"player_id": 200, "player_name": "Receiver Player", "from_team_id": 2, "from_team_name": "Team 1", "to_team_id": 1, "to_team_name": "Team 0"},
+                    {
+                        "player_id": 100,
+                        "player_name": "Sender Player",
+                        "from_team_id": 1,
+                        "from_team_name": "Team 0",
+                        "to_team_id": 2,
+                        "to_team_name": "Team 1",
+                    },
+                    {
+                        "player_id": 200,
+                        "player_name": "Receiver Player",
+                        "from_team_id": 2,
+                        "from_team_name": "Team 1",
+                        "to_team_id": 1,
+                        "to_team_name": "Team 0",
+                    },
                 ],
             }
         ],
@@ -94,6 +114,7 @@ def _make_espn_client(
 # ---------------------------------------------------------------------------
 # propose_trade – tool schema
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 class TestProposeTradeToolSchema:
@@ -124,33 +145,49 @@ class TestProposeTradeToolSchema:
 # propose_trade – validation
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 class TestProposeTradeValidation:
     @pytest.mark.asyncio
     async def test_missing_league_id_raises(self, monkeypatch):
         import espn_fantasy_mcp.tools.transaction_tools as tt
+
         monkeypatch.setattr(tt.Config, "ESPN_LEAGUE_ID", None)
         with pytest.raises(ValueError, match="league_id is required"):
-            await transaction_tools.handle_propose_trade({
-                "team_id": 0, "receiving_team_id": 1,
-                "send_player_ids": [100], "receive_player_ids": [200],
-            })
+            await transaction_tools.handle_propose_trade(
+                {
+                    "team_id": 1,
+                    "receiving_team_id": 2,
+                    "send_player_ids": [100],
+                    "receive_player_ids": [200],
+                }
+            )
 
     @pytest.mark.asyncio
     async def test_missing_send_player_ids_raises(self, mock_env_vars):
         with pytest.raises(ValueError, match="send_player_ids"):
-            await transaction_tools.handle_propose_trade({
-                "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-                "send_player_ids": [], "receive_player_ids": [200],
-            })
+            await transaction_tools.handle_propose_trade(
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                    "receiving_team_id": 2,
+                    "send_player_ids": [],
+                    "receive_player_ids": [200],
+                }
+            )
 
     @pytest.mark.asyncio
     async def test_missing_receive_player_ids_raises(self, mock_env_vars):
         with pytest.raises(ValueError, match="receive_player_ids"):
-            await transaction_tools.handle_propose_trade({
-                "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-                "send_player_ids": [100], "receive_player_ids": [],
-            })
+            await transaction_tools.handle_propose_trade(
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                    "receiving_team_id": 2,
+                    "send_player_ids": [100],
+                    "receive_player_ids": [],
+                }
+            )
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
@@ -163,11 +200,15 @@ class TestProposeTradeValidation:
         )
         mock_client_class.return_value = client
 
-        result = await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [999],  # not on roster
-            "receive_player_ids": [200],
-        })
+        result = await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [999],  # not on roster
+                "receive_player_ids": [200],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -185,11 +226,15 @@ class TestProposeTradeValidation:
         )
         mock_client_class.return_value = client
 
-        result = await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100],
-            "receive_player_ids": [999],  # not on receiving team
-        })
+        result = await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [999],  # not on receiving team
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -201,77 +246,93 @@ class TestProposeTradeValidation:
 # propose_trade – preview (confirm=False)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 class TestProposeTradePreview:
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
-    async def test_preview_returns_success_and_preview_flag(
-        self, mock_client_class, mock_env_vars
-    ):
+    async def test_preview_returns_success_and_preview_flag(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-        })
+        result = await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["preview"] is True
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
-    async def test_preview_does_not_call_propose_trade(
-        self, mock_client_class, mock_env_vars
-    ):
+    async def test_preview_does_not_call_propose_trade(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
-        await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-        })
+        await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+            }
+        )
         client.propose_trade.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
-    async def test_preview_includes_player_names(
-        self, mock_client_class, mock_env_vars
-    ):
+    async def test_preview_includes_player_names(self, mock_client_class, mock_env_vars):
         client = _make_espn_client(
             proposing_roster=[_make_roster_player(100, "Aaron Judge")],
             receiving_roster=[_make_roster_player(200, "Shohei Ohtani")],
         )
         mock_client_class.return_value = client
-        result = await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-        })
+        result = await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+            }
+        )
         response = json.loads(result)
         assert response["trade"]["sending"][0]["player_name"] == "Aaron Judge"
         assert response["trade"]["receiving"][0]["player_name"] == "Shohei Ohtani"
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
-    async def test_preview_includes_team_names(
-        self, mock_client_class, mock_env_vars
-    ):
+    async def test_preview_includes_team_names(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-        })
+        result = await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+            }
+        )
         response = json.loads(result)
-        assert response["from_team"]["team_id"] == 0
-        assert response["to_team"]["team_id"] == 1
+        assert response["from_team"]["team_id"] == 1
+        assert response["to_team"]["team_id"] == 2
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
-    async def test_preview_instructions_mention_confirm(
-        self, mock_client_class, mock_env_vars
-    ):
+    async def test_preview_instructions_mention_confirm(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-        })
+        result = await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+            }
+        )
         response = json.loads(result)
         assert "confirm=true" in response["instructions"]
 
@@ -279,6 +340,7 @@ class TestProposeTradePreview:
 # ---------------------------------------------------------------------------
 # propose_trade – execute (confirm=True)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 class TestProposeTradeExecute:
@@ -290,16 +352,23 @@ class TestProposeTradeExecute:
         client = _make_espn_client()
         mock_client_class.return_value = client
 
-        await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-            "comment": "Good deal", "expiration_days": 3,
-            "scoring_period_id": 7, "confirm": True,
-        })
+        await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+                "comment": "Good deal",
+                "expiration_days": 3,
+                "scoring_period_id": 7,
+                "confirm": True,
+            }
+        )
 
         client.propose_trade.assert_called_once_with(
-            team_id=0,
-            receiving_team_id=1,
+            team_id=1,
+            receiving_team_id=2,
             send_player_ids=[100],
             receive_player_ids=[200],
             expiration_days=3,
@@ -313,11 +382,16 @@ class TestProposeTradeExecute:
         self, mock_client_class, mock_env_vars
     ):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-            "confirm": True,
-        })
+        result = await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+                "confirm": True,
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["executed"] is True
@@ -327,17 +401,20 @@ class TestProposeTradeExecute:
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
-    async def test_execute_uses_default_expiration_days(
-        self, mock_client_class, mock_env_vars
-    ):
+    async def test_execute_uses_default_expiration_days(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
 
-        await transaction_tools.handle_propose_trade({
-            "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-            "send_player_ids": [100], "receive_player_ids": [200],
-            "confirm": True,
-        })
+        await transaction_tools.handle_propose_trade(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "receiving_team_id": 2,
+                "send_player_ids": [100],
+                "receive_player_ids": [200],
+                "confirm": True,
+            }
+        )
 
         assert client.propose_trade.call_args.kwargs["expiration_days"] == 7
 
@@ -345,6 +422,7 @@ class TestProposeTradeExecute:
 # ---------------------------------------------------------------------------
 # cancel_trade – schema, preview, execute
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 class TestCancelTradeToolSchema:
@@ -364,10 +442,13 @@ class TestCancelTradePreview:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_returns_success(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_cancel_trade({
-            "league_id": "123456", "team_id": 0,
-            "transaction_id": "trade-proposal-abc",
-        })
+        result = await transaction_tools.handle_cancel_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["preview"] is True
@@ -377,20 +458,26 @@ class TestCancelTradePreview:
     async def test_preview_does_not_cancel(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
-        await transaction_tools.handle_cancel_trade({
-            "league_id": "123456", "team_id": 0,
-            "transaction_id": "trade-proposal-abc",
-        })
+        await transaction_tools.handle_cancel_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         client.cancel_trade.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_includes_transaction_id(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_cancel_trade({
-            "league_id": "123456", "team_id": 0,
-            "transaction_id": "trade-proposal-abc",
-        })
+        result = await transaction_tools.handle_cancel_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         response = json.loads(result)
         assert response["transaction_id"] == "trade-proposal-abc"
 
@@ -398,10 +485,13 @@ class TestCancelTradePreview:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_includes_trade_details(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_cancel_trade({
-            "league_id": "123456", "team_id": 0,
-            "transaction_id": "trade-proposal-abc",
-        })
+        result = await transaction_tools.handle_cancel_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         response = json.loads(result)
         assert response["trade"] is not None
         assert response["trade"]["transaction_id"] == "trade-proposal-abc"
@@ -415,13 +505,17 @@ class TestCancelTradeExecute:
     async def test_execute_calls_cancel_trade(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
-        await transaction_tools.handle_cancel_trade({
-            "league_id": "123456", "team_id": 0,
-            "transaction_id": "trade-proposal-abc",
-            "scoring_period_id": 5, "confirm": True,
-        })
+        await transaction_tools.handle_cancel_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+                "scoring_period_id": 5,
+                "confirm": True,
+            }
+        )
         client.cancel_trade.assert_called_once_with(
-            team_id=0,
+            team_id=2,
             transaction_id="trade-proposal-abc",
             scoring_period_id=5,
         )
@@ -430,10 +524,14 @@ class TestCancelTradeExecute:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_execute_returns_canceled_status(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_cancel_trade({
-            "league_id": "123456", "team_id": 0,
-            "transaction_id": "trade-proposal-abc", "confirm": True,
-        })
+        result = await transaction_tools.handle_cancel_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+                "confirm": True,
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["executed"] is True
@@ -444,6 +542,7 @@ class TestCancelTradeExecute:
 # ---------------------------------------------------------------------------
 # accept_trade – schema, preview, execute
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 class TestAcceptTradeToolSchema:
@@ -463,10 +562,13 @@ class TestAcceptTradePreview:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_returns_success(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_accept_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-        })
+        result = await transaction_tools.handle_accept_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["preview"] is True
@@ -476,20 +578,26 @@ class TestAcceptTradePreview:
     async def test_preview_does_not_accept(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
-        await transaction_tools.handle_accept_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-        })
+        await transaction_tools.handle_accept_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         client.accept_trade.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_includes_trade_details(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_accept_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-        })
+        result = await transaction_tools.handle_accept_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         response = json.loads(result)
         assert response["trade"] is not None
         assert response["trade"]["transaction_id"] == "trade-proposal-abc"
@@ -503,13 +611,17 @@ class TestAcceptTradeExecute:
     async def test_execute_calls_accept_trade(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
-        await transaction_tools.handle_accept_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-            "scoring_period_id": 5, "confirm": True,
-        })
+        await transaction_tools.handle_accept_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+                "scoring_period_id": 5,
+                "confirm": True,
+            }
+        )
         client.accept_trade.assert_called_once_with(
-            team_id=1,
+            team_id=2,
             transaction_id="trade-proposal-abc",
             scoring_period_id=5,
         )
@@ -518,10 +630,14 @@ class TestAcceptTradeExecute:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_execute_returns_executed_status(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_accept_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc", "confirm": True,
-        })
+        result = await transaction_tools.handle_accept_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+                "confirm": True,
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["executed"] is True
@@ -532,6 +648,7 @@ class TestAcceptTradeExecute:
 # ---------------------------------------------------------------------------
 # decline_trade – schema, preview, execute
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.unit
 class TestDeclineTradeToolSchema:
@@ -551,10 +668,13 @@ class TestDeclineTradePreview:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_returns_success(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_decline_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-        })
+        result = await transaction_tools.handle_decline_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["preview"] is True
@@ -564,21 +684,27 @@ class TestDeclineTradePreview:
     async def test_preview_does_not_decline(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
-        await transaction_tools.handle_decline_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-        })
+        await transaction_tools.handle_decline_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         client.decline_trade.assert_not_called()
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_includes_comment(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_decline_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-            "comment": "No thanks",
-        })
+        result = await transaction_tools.handle_decline_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+                "comment": "No thanks",
+            }
+        )
         response = json.loads(result)
         assert response["comment"] == "No thanks"
 
@@ -586,10 +712,13 @@ class TestDeclineTradePreview:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_preview_includes_trade_details(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_decline_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-        })
+        result = await transaction_tools.handle_decline_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+            }
+        )
         response = json.loads(result)
         assert response["trade"] is not None
         assert response["trade"]["transaction_id"] == "trade-proposal-abc"
@@ -600,18 +729,21 @@ class TestDeclineTradePreview:
 class TestDeclineTradeExecute:
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
-    async def test_execute_calls_decline_trade_with_comment(
-        self, mock_client_class, mock_env_vars
-    ):
+    async def test_execute_calls_decline_trade_with_comment(self, mock_client_class, mock_env_vars):
         client = _make_espn_client()
         mock_client_class.return_value = client
-        await transaction_tools.handle_decline_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc",
-            "comment": "No thanks", "scoring_period_id": 5, "confirm": True,
-        })
+        await transaction_tools.handle_decline_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+                "comment": "No thanks",
+                "scoring_period_id": 5,
+                "confirm": True,
+            }
+        )
         client.decline_trade.assert_called_once_with(
-            team_id=1,
+            team_id=2,
             transaction_id="trade-proposal-abc",
             comment="No thanks",
             scoring_period_id=5,
@@ -621,10 +753,14 @@ class TestDeclineTradeExecute:
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_execute_returns_executed_status(self, mock_client_class, mock_env_vars):
         mock_client_class.return_value = _make_espn_client()
-        result = await transaction_tools.handle_decline_trade({
-            "league_id": "123456", "team_id": 1,
-            "transaction_id": "trade-proposal-abc", "confirm": True,
-        })
+        result = await transaction_tools.handle_decline_trade(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "transaction_id": "trade-proposal-abc",
+                "confirm": True,
+            }
+        )
         response = json.loads(result)
         assert response["success"] is True
         assert response["executed"] is True
@@ -635,52 +771,72 @@ class TestDeclineTradeExecute:
 # handle_tool dispatch
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 class TestTradeHandleToolDispatch:
     @pytest.mark.asyncio
     async def test_dispatch_propose_trade(self, mock_env_vars):
         with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
             mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool("propose_trade", {
-                "league_id": "123456", "team_id": 0, "receiving_team_id": 1,
-                "send_player_ids": [100], "receive_player_ids": [200],
-            })
+            result = await transaction_tools.handle_tool(
+                "propose_trade",
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                    "receiving_team_id": 2,
+                    "send_player_ids": [100],
+                    "receive_player_ids": [200],
+                },
+            )
         assert json.loads(result)["success"] is True
 
     @pytest.mark.asyncio
     async def test_dispatch_cancel_trade(self, mock_env_vars):
         with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
             mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool("cancel_trade", {
-                "league_id": "123456", "team_id": 0,
-                "transaction_id": "trade-proposal-abc",
-            })
+            result = await transaction_tools.handle_tool(
+                "cancel_trade",
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                    "transaction_id": "trade-proposal-abc",
+                },
+            )
         assert json.loads(result)["success"] is True
 
     @pytest.mark.asyncio
     async def test_dispatch_accept_trade(self, mock_env_vars):
         with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
             mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool("accept_trade", {
-                "league_id": "123456", "team_id": 1,
-                "transaction_id": "trade-proposal-abc",
-            })
+            result = await transaction_tools.handle_tool(
+                "accept_trade",
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                    "transaction_id": "trade-proposal-abc",
+                },
+            )
         assert json.loads(result)["success"] is True
 
     @pytest.mark.asyncio
     async def test_dispatch_decline_trade(self, mock_env_vars):
         with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
             mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool("decline_trade", {
-                "league_id": "123456", "team_id": 1,
-                "transaction_id": "trade-proposal-abc",
-            })
+            result = await transaction_tools.handle_tool(
+                "decline_trade",
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                    "transaction_id": "trade-proposal-abc",
+                },
+            )
         assert json.loads(result)["success"] is True
 
 
 # ---------------------------------------------------------------------------
 # get_pending_transactions – ESPNClient unit tests
 # ---------------------------------------------------------------------------
+
 
 def _make_league_with_transactions(transactions: list) -> Mock:
     """Build a mock league whose espn_request returns the given transactions."""
@@ -710,6 +866,7 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
         result = client.get_pending_transactions()
 
@@ -719,8 +876,12 @@ class TestGetPendingTransactionsESPNClient:
     @patch("espn_fantasy_mcp.espn_client.League")
     def test_pending_waiver_included(self, mock_league_class):
         txn = {
-            "id": "waiver-1", "type": "WAIVER", "status": "PENDING",
-            "teamId": 1, "bidAmount": 10, "scoringPeriodId": 5,
+            "id": "waiver-1",
+            "type": "WAIVER",
+            "status": "PENDING",
+            "teamId": 1,
+            "bidAmount": 10,
+            "scoringPeriodId": 5,
             "items": [
                 {"type": "ADD", "playerId": 200},
                 {"type": "DROP", "playerId": 100},
@@ -730,6 +891,7 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
         result = client.get_pending_transactions()
 
@@ -744,9 +906,14 @@ class TestGetPendingTransactionsESPNClient:
     @patch("espn_fantasy_mcp.espn_client.League")
     def test_pending_trade_proposal_included(self, mock_league_class):
         txn = {
-            "id": "trade-1", "type": "TRADE_PROPOSAL", "status": "PENDING",
-            "teamId": 1, "scoringPeriodId": 5, "comment": "Deal?",
-            "expirationDate": 1773082242411, "teamActions": {"1": "ACCEPTED"},
+            "id": "trade-1",
+            "type": "TRADE_PROPOSAL",
+            "status": "PENDING",
+            "teamId": 1,
+            "scoringPeriodId": 5,
+            "comment": "Deal?",
+            "expirationDate": 1773082242411,
+            "teamActions": {"1": "ACCEPTED"},
             "items": [
                 {"playerId": 100, "type": "TRADE", "fromTeamId": 1, "toTeamId": 2},
                 {"playerId": 200, "type": "TRADE", "fromTeamId": 2, "toTeamId": 1},
@@ -756,6 +923,7 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
         result = client.get_pending_transactions()
 
@@ -772,13 +940,19 @@ class TestGetPendingTransactionsESPNClient:
     def test_superseded_proposal_excluded(self, mock_league_class):
         """Original TRADE_PROPOSAL is skipped when a cancel/decline references it."""
         original = {
-            "id": "trade-1", "type": "TRADE_PROPOSAL", "status": "PENDING",
-            "teamId": 1, "scoringPeriodId": 5,
+            "id": "trade-1",
+            "type": "TRADE_PROPOSAL",
+            "status": "PENDING",
+            "teamId": 1,
+            "scoringPeriodId": 5,
             "items": [{"playerId": 100, "type": "TRADE", "fromTeamId": 1, "toTeamId": 2}],
         }
         cancel = {
-            "id": "cancel-1", "type": "TRADE_PROPOSAL", "status": "CANCELED",
-            "teamId": 1, "scoringPeriodId": 5,
+            "id": "cancel-1",
+            "type": "TRADE_PROPOSAL",
+            "status": "CANCELED",
+            "teamId": 1,
+            "scoringPeriodId": 5,
             "relatedTransactionId": "trade-1",
             "items": [{"playerId": 100, "type": "TRADE", "fromTeamId": 1, "toTeamId": 2}],
         }
@@ -786,6 +960,7 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
         result = client.get_pending_transactions()
 
@@ -798,16 +973,22 @@ class TestGetPendingTransactionsESPNClient:
     def test_trade_accept_shown_with_items_from_original(self, mock_league_class):
         """TRADE_ACCEPT is included with items sourced from the original proposal."""
         original = {
-            "id": "trade-1", "type": "TRADE_PROPOSAL", "status": "PENDING",
-            "teamId": 1, "scoringPeriodId": 5,
+            "id": "trade-1",
+            "type": "TRADE_PROPOSAL",
+            "status": "PENDING",
+            "teamId": 1,
+            "scoringPeriodId": 5,
             "items": [
                 {"playerId": 100, "type": "TRADE", "fromTeamId": 1, "toTeamId": 2},
                 {"playerId": 200, "type": "TRADE", "fromTeamId": 2, "toTeamId": 1},
             ],
         }
         accept = {
-            "id": "accept-1", "type": "TRADE_ACCEPT", "status": "PENDING",
-            "teamId": 2, "scoringPeriodId": 5,
+            "id": "accept-1",
+            "type": "TRADE_ACCEPT",
+            "status": "PENDING",
+            "teamId": 2,
+            "scoringPeriodId": 5,
             "relatedTransactionId": "trade-1",
             "items": [],  # TRADE_ACCEPT carries no items
         }
@@ -815,6 +996,7 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
         result = client.get_pending_transactions()
 
@@ -835,8 +1017,11 @@ class TestGetPendingTransactionsESPNClient:
     def test_trade_accept_missing_original_has_none_proposing_team(self, mock_league_class):
         """TRADE_ACCEPT with no matching original sets proposing_team_id to None."""
         accept = {
-            "id": "accept-orphan", "type": "TRADE_ACCEPT", "status": "PENDING",
-            "teamId": 2, "scoringPeriodId": 5,
+            "id": "accept-orphan",
+            "type": "TRADE_ACCEPT",
+            "status": "PENDING",
+            "teamId": 2,
+            "scoringPeriodId": 5,
             "relatedTransactionId": "nonexistent-id",
             "items": [],
         }
@@ -844,6 +1029,7 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
         result = client.get_pending_transactions()
 
@@ -857,22 +1043,31 @@ class TestGetPendingTransactionsESPNClient:
     def test_team_filter_excludes_unrelated_waivers(self, mock_league_class):
         """When team_id is given, waivers from other teams are excluded."""
         txn_mine = {
-            "id": "waiver-1", "type": "WAIVER", "status": "PENDING",
-            "teamId": 1, "bidAmount": 5, "scoringPeriodId": 5,
+            "id": "waiver-1",
+            "type": "WAIVER",
+            "status": "PENDING",
+            "teamId": 1,
+            "bidAmount": 5,
+            "scoringPeriodId": 5,
             "items": [{"type": "ADD", "playerId": 200}],
         }
         txn_other = {
-            "id": "waiver-2", "type": "WAIVER", "status": "PENDING",
-            "teamId": 2, "bidAmount": 0, "scoringPeriodId": 5,
+            "id": "waiver-2",
+            "type": "WAIVER",
+            "status": "PENDING",
+            "teamId": 2,
+            "bidAmount": 0,
+            "scoringPeriodId": 5,
             "items": [{"type": "ADD", "playerId": 100}],
         }
         league = _make_league_with_transactions([txn_mine, txn_other])
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
-        # team index 0 maps to team_id=1 (first team in list)
-        result = client.get_pending_transactions(team_id=0)
+        # team index 1 maps to team_id=1 (first team in list)
+        result = client.get_pending_transactions(team_id=1)
 
         assert len(result["pending_waivers"]) == 1
         assert result["pending_waivers"][0]["transaction_id"] == "waiver-1"
@@ -881,8 +1076,11 @@ class TestGetPendingTransactionsESPNClient:
     def test_team_filter_includes_trades_where_team_is_involved(self, mock_league_class):
         """Team filter keeps trades where the team appears in any item's fromTeamId or toTeamId."""
         txn = {
-            "id": "trade-1", "type": "TRADE_PROPOSAL", "status": "PENDING",
-            "teamId": 1, "scoringPeriodId": 5,
+            "id": "trade-1",
+            "type": "TRADE_PROPOSAL",
+            "status": "PENDING",
+            "teamId": 1,
+            "scoringPeriodId": 5,
             "items": [
                 {"playerId": 100, "type": "TRADE", "fromTeamId": 1, "toTeamId": 2},
                 {"playerId": 200, "type": "TRADE", "fromTeamId": 2, "toTeamId": 1},
@@ -892,9 +1090,10 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
-        # Filter for team index 1 (team_id=2, the receiving team)
-        result = client.get_pending_transactions(team_id=1)
+        # Filter for team index 2 (team_id=2, the receiving team)
+        result = client.get_pending_transactions(team_id=2)
 
         assert len(result["pending_trades"]) == 1
 
@@ -902,8 +1101,11 @@ class TestGetPendingTransactionsESPNClient:
     def test_team_filter_excludes_unrelated_trades(self, mock_league_class):
         """Team filter excludes trades where the filtered team is not a party."""
         txn = {
-            "id": "trade-1", "type": "TRADE_PROPOSAL", "status": "PENDING",
-            "teamId": 1, "scoringPeriodId": 5,
+            "id": "trade-1",
+            "type": "TRADE_PROPOSAL",
+            "status": "PENDING",
+            "teamId": 1,
+            "scoringPeriodId": 5,
             "items": [
                 {"playerId": 100, "type": "TRADE", "fromTeamId": 1, "toTeamId": 2},
             ],
@@ -917,9 +1119,10 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
-        # Filter for team index 2 (team_id=3, not involved)
-        result = client.get_pending_transactions(team_id=2)
+        # Filter for team index 3 (team_id=3, not involved)
+        result = client.get_pending_transactions(team_id=3)
 
         assert len(result["pending_trades"]) == 0
 
@@ -933,6 +1136,7 @@ class TestGetPendingTransactionsESPNClient:
         mock_league_class.return_value = league
 
         from espn_fantasy_mcp.espn_client import ESPNClient
+
         client = ESPNClient(league_id="123456", espn_s2="s2", swid="{swid}")
         result = client.get_pending_transactions()
 
@@ -943,6 +1147,7 @@ class TestGetPendingTransactionsESPNClient:
 # get_pending_transactions – MCP tool handler
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.unit
 class TestGetPendingTransactionsTool:
     def test_tool_is_registered(self):
@@ -950,7 +1155,9 @@ class TestGetPendingTransactionsTool:
         assert "get_pending_transactions" in names
 
     def test_team_id_not_required(self):
-        tool = next(t for t in transaction_tools.get_tools() if t.name == "get_pending_transactions")
+        tool = next(
+            t for t in transaction_tools.get_tools() if t.name == "get_pending_transactions"
+        )
         assert tool.inputSchema.get("required", []) == []
 
     @pytest.mark.asyncio
@@ -964,9 +1171,12 @@ class TestGetPendingTransactionsTool:
         client.get_team.return_value = Mock(team_name="My Team")
         mock_client_class.return_value = client
 
-        result = await transaction_tools.handle_get_pending_transactions({
-            "league_id": "123456", "team_id": 0,
-        })
+        result = await transaction_tools.handle_get_pending_transactions(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -978,14 +1188,18 @@ class TestGetPendingTransactionsTool:
     async def test_passes_team_id_to_client(self, mock_client_class, mock_env_vars):
         client = Mock()
         client.get_pending_transactions.return_value = {
-            "pending_waivers": [], "pending_trades": [],
+            "pending_waivers": [],
+            "pending_trades": [],
         }
         client.get_team.return_value = Mock(team_name="My Team")
         mock_client_class.return_value = client
 
-        await transaction_tools.handle_get_pending_transactions({
-            "league_id": "123456", "team_id": 3,
-        })
+        await transaction_tools.handle_get_pending_transactions(
+            {
+                "league_id": "123456",
+                "team_id": 3,
+            }
+        )
 
         client.get_pending_transactions.assert_called_once_with(team_id=3)
 
@@ -994,7 +1208,8 @@ class TestGetPendingTransactionsTool:
     async def test_no_team_id_passes_none(self, mock_client_class, mock_env_vars):
         client = Mock()
         client.get_pending_transactions.return_value = {
-            "pending_waivers": [], "pending_trades": [],
+            "pending_waivers": [],
+            "pending_trades": [],
         }
         mock_client_class.return_value = client
 
@@ -1009,9 +1224,11 @@ class TestGetPendingTransactionsTool:
         client.get_pending_transactions.side_effect = RuntimeError("ESPN unavailable")
         mock_client_class.return_value = client
 
-        result = await transaction_tools.handle_get_pending_transactions({
-            "league_id": "123456",
-        })
+        result = await transaction_tools.handle_get_pending_transactions(
+            {
+                "league_id": "123456",
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False

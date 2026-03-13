@@ -21,7 +21,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Team ID (0-based index)",
+                        "description": "Team ID (1-based index)",
                     },
                     "season_year": {
                         "type": "integer",
@@ -43,7 +43,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Team ID (0-based index)",
+                        "description": "Team ID (1-based index)",
                     },
                     "season_year": {
                         "type": "integer",

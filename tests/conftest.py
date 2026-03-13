@@ -1,4 +1,5 @@
 """Shared pytest fixtures for ESPN Fantasy MCP tests."""
+
 import pytest
 from unittest.mock import Mock, MagicMock
 from typing import Dict, Any
@@ -65,12 +66,9 @@ def sample_league_settings() -> Dict[str, Any]:
         "acquisition_settings": {
             "acquisitionBudget": 100,
             "acquisitionLimit": -1,
-            "isWaiverOrderReset": False
+            "isWaiverOrderReset": False,
         },
-        "draft_settings": {
-            "date": 1710000000000,
-            "type": "SNAKE"
-        },
+        "draft_settings": {"date": 1710000000000, "type": "SNAKE"},
         "roster_settings": {
             "lineupSlotCounts": {
                 "C": 1,
@@ -83,15 +81,15 @@ def sample_league_settings() -> Dict[str, Any]:
                 "SP": 2,
                 "RP": 2,
                 "P": 2,
-                "BE": 5
+                "BE": 5,
             }
         },
         "scoring_settings": {},
         "stat_categories": {
             "batting": ["R", "HR", "RBI", "SB", "AVG", "OPS"],
-            "pitching": ["W", "SV", "K", "ERA", "WHIP", "QS"]
+            "pitching": ["W", "SV", "K", "ERA", "WHIP", "QS"],
         },
-        "stat_id_map": {}
+        "stat_id_map": {},
     }
 
 
@@ -106,20 +104,11 @@ def sample_player_data() -> Dict[str, Any]:
         "eligible_slots": ["OF", "UTIL"],
         "lineup_slot": "OF",
         "injury_status": "ACTIVE",
-        "stats": {
-            "2024": {
-                "AB": 500,
-                "R": 100,
-                "HR": 45,
-                "RBI": 120,
-                "SB": 10,
-                "AVG": 0.300
-            }
-        },
+        "stats": {"2024": {"AB": 500, "R": 100, "HR": 45, "RBI": 120, "SB": 10, "AVG": 0.300}},
         "roster_status": "ROSTERED",
-        "fantasy_team_id": 0,
+        "fantasy_team_id": 1,
         "fantasy_team_name": "Test Team",
-        "fantasy_team_abbrev": "TEST"
+        "fantasy_team_abbrev": "TEST",
     }
 
 
@@ -127,7 +116,7 @@ def sample_player_data() -> Dict[str, Any]:
 def sample_team_data() -> Dict[str, Any]:
     """Sample team data."""
     return {
-        "team_id": 0,
+        "team_id": 1,
         "team_name": "Test Team",
         "team_abbrev": "TEST",
         "owners": ["John Doe"],
@@ -137,7 +126,7 @@ def sample_team_data() -> Dict[str, Any]:
         "ties": 0,
         "points_for": 500.0,
         "points_against": 450.0,
-        "standing": 1
+        "standing": 1,
     }
 
 
@@ -149,6 +138,7 @@ def clear_player_map_cache() -> None:
     subsequent tests that use the same league_id + season_year cache key.
     """
     from espn_fantasy_mcp import espn_client
+
     espn_client._player_map_cache.clear()
 
 
@@ -156,11 +146,12 @@ def clear_player_map_cache() -> None:
 def mock_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mock environment variables for testing."""
     from espn_fantasy_mcp.config import Config
+
     monkeypatch.setattr(Config, "ESPN_S2", "test_espn_s2_token")
     monkeypatch.setattr(Config, "ESPN_SWID", "{TEST-SWID-1234}")
     monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", "123456")
     monkeypatch.setattr(Config, "ESPN_SEASON_YEAR", 2024)
-    monkeypatch.setattr(Config, "ESPN_TEAM_ID", "0")
+    monkeypatch.setattr(Config, "ESPN_TEAM_ID", "1")
 
 
 @pytest.fixture
@@ -175,6 +166,7 @@ def mock_player():
         def test_something(mock_player):
             player = mock_player(player_id=111, lineup_slot="BE")
     """
+
     def _make(
         player_id: int = 12345,
         name: str = "Test Player",
@@ -187,6 +179,7 @@ def mock_player():
         player.lineup_slot = lineup_slot
         player.position = position
         return player
+
     return _make
 
 
