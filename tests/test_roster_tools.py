@@ -1,4 +1,5 @@
 """Tests for roster tools."""
+
 import pytest
 import json
 from unittest.mock import patch, Mock
@@ -61,11 +62,14 @@ class TestRosterToolsHandleTool:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_tool("modify_lineup", {
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_tool(
+            "modify_lineup",
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            },
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -80,41 +84,50 @@ class TestHandleModifyLineupValidation:
     async def test_missing_league_id_raises(self, monkeypatch):
         """Test that missing league_id raises ValueError."""
         import espn_fantasy_mcp.tools.roster_tools as rt
+
         monkeypatch.setattr(rt.Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
-            await roster_tools.handle_modify_lineup({
-                "team_id": 0,
-                "moves": [{"player_id": 1, "from_slot": 16, "to_slot": 0}],
-            })
+            await roster_tools.handle_modify_lineup(
+                {
+                    "team_id": 1,
+                    "moves": [{"player_id": 1, "from_slot": 16, "to_slot": 0}],
+                }
+            )
 
     @pytest.mark.asyncio
     async def test_missing_team_id_raises(self, mock_env_vars):
         """Test that missing team_id raises ValueError."""
         with pytest.raises(ValueError, match="team_id is required"):
-            await roster_tools.handle_modify_lineup({
-                "league_id": "123456",
-                "moves": [{"player_id": 1, "from_slot": 16, "to_slot": 0}],
-            })
+            await roster_tools.handle_modify_lineup(
+                {
+                    "league_id": "123456",
+                    "moves": [{"player_id": 1, "from_slot": 16, "to_slot": 0}],
+                }
+            )
 
     @pytest.mark.asyncio
     async def test_missing_moves_raises(self, mock_env_vars):
         """Test that missing moves raises ValueError."""
         with pytest.raises(ValueError, match="moves array is required"):
-            await roster_tools.handle_modify_lineup({
-                "league_id": "123456",
-                "team_id": 0,
-            })
+            await roster_tools.handle_modify_lineup(
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                }
+            )
 
     @pytest.mark.asyncio
     async def test_empty_moves_raises(self, mock_env_vars):
         """Test that empty moves list raises ValueError."""
         with pytest.raises(ValueError, match="moves array is required"):
-            await roster_tools.handle_modify_lineup({
-                "league_id": "123456",
-                "team_id": 0,
-                "moves": [],
-            })
+            await roster_tools.handle_modify_lineup(
+                {
+                    "league_id": "123456",
+                    "team_id": 1,
+                    "moves": [],
+                }
+            )
 
 
 @pytest.mark.unit
@@ -131,12 +144,14 @@ class TestHandleModifyLineupPreview:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-            "confirm": False,
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+                "confirm": False,
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -152,11 +167,13 @@ class TestHandleModifyLineupPreview:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         mock_espn_client.modify_lineup.assert_not_called()
 
@@ -172,11 +189,13 @@ class TestHandleModifyLineupPreview:
         ]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert len(response["moves"]) == 1
@@ -200,11 +219,13 @@ class TestHandleModifyLineupPreview:
         mock_espn_client.get_team.return_value = Mock(team_name="Best Team")
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 2,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 2,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["team_name"] == "Best Team"
@@ -220,12 +241,14 @@ class TestHandleModifyLineupPreview:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-            "scoring_period_id": 10,
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+                "scoring_period_id": 10,
+            }
+        )
 
         response = json.loads(result)
         assert response["scoring_period_id"] == 10
@@ -241,11 +264,13 @@ class TestHandleModifyLineupPreview:
         mock_espn_client.league.currentMatchupPeriod = 7
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["scoring_period_id"] == 7
@@ -260,11 +285,13 @@ class TestHandleModifyLineupPreview:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert "confirm=true" in response["instructions"]
@@ -282,14 +309,16 @@ class TestHandleModifyLineupPreview:
         ]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [
-                {"player_id": 111, "from_slot": 16, "to_slot": 0},
-                {"player_id": 222, "from_slot": 0, "to_slot": 16},
-            ],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [
+                    {"player_id": 111, "from_slot": 16, "to_slot": 0},
+                    {"player_id": 222, "from_slot": 0, "to_slot": 16},
+                ],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -310,11 +339,13 @@ class TestHandleModifyLineupMoveValidationErrors:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 999, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 999, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -335,11 +366,13 @@ class TestHandleModifyLineupMoveValidationErrors:
         ]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -358,14 +391,16 @@ class TestHandleModifyLineupMoveValidationErrors:
         ]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [
-                {"player_id": 999, "from_slot": 16, "to_slot": 0},   # not on roster
-                {"player_id": 111, "from_slot": 16, "to_slot": 0},   # wrong from_slot
-            ],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [
+                    {"player_id": 999, "from_slot": 16, "to_slot": 0},  # not on roster
+                    {"player_id": 111, "from_slot": 16, "to_slot": 0},  # wrong from_slot
+                ],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -381,12 +416,14 @@ class TestHandleModifyLineupMoveValidationErrors:
         mock_espn_client.get_roster.return_value = []
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 999, "from_slot": 16, "to_slot": 0}],
-            "confirm": True,
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 999, "from_slot": 16, "to_slot": 0}],
+                "confirm": True,
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -407,12 +444,14 @@ class TestHandleModifyLineupExecute:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-            "confirm": True,
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+                "confirm": True,
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -431,13 +470,15 @@ class TestHandleModifyLineupExecute:
         mock_client_class.return_value = mock_espn_client
 
         moves = [{"player_id": 111, "from_slot": 16, "to_slot": 0}]
-        await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 3,
-            "moves": moves,
-            "scoring_period_id": 4,
-            "confirm": True,
-        })
+        await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 3,
+                "moves": moves,
+                "scoring_period_id": 4,
+                "confirm": True,
+            }
+        )
 
         mock_espn_client.modify_lineup.assert_called_once_with(
             team_id=3,
@@ -455,15 +496,17 @@ class TestHandleModifyLineupExecute:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-            "confirm": True,
-        })
+        await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+                "confirm": True,
+            }
+        )
 
         mock_espn_client.modify_lineup.assert_called_once_with(
-            team_id=0,
+            team_id=1,
             moves=[{"player_id": 111, "from_slot": 16, "to_slot": 0}],
             scoring_period_id=None,
         )
@@ -475,19 +518,26 @@ class TestHandleModifyLineupExecute:
         self, mock_client_class, mock_espn_client, mock_player, mock_env_vars
     ):
         """Test execute response includes move details and raw ESPN API response."""
-        raw_api_response = {"id": "txn-xyz", "status": "EXECUTED", "scoringPeriodId": 2, "extra": "data"}
+        raw_api_response = {
+            "id": "txn-xyz",
+            "status": "EXECUTED",
+            "scoringPeriodId": 2,
+            "extra": "data",
+        }
         mock_espn_client.get_roster.return_value = [
             mock_player(player_id=111, name="Aaron Judge", lineup_slot="BE", position="OF")
         ]
         mock_espn_client.modify_lineup.return_value = raw_api_response
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-            "confirm": True,
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+                "confirm": True,
+            }
+        )
 
         response = json.loads(result)
         assert response["moves"][0]["player_name"] == "Aaron Judge"
@@ -506,11 +556,13 @@ class TestHandleModifyLineupErrorHandling:
         mock_espn_client.get_roster.side_effect = ConnectionError("API unavailable")
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -519,16 +571,20 @@ class TestHandleModifyLineupErrorHandling:
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
-    async def test_index_error_invalid_team_id(self, mock_client_class, mock_espn_client, mock_env_vars):
+    async def test_index_error_invalid_team_id(
+        self, mock_client_class, mock_espn_client, mock_env_vars
+    ):
         """Test that IndexError (e.g. invalid team_id) returns a failure response."""
         mock_espn_client.get_roster.side_effect = IndexError("list index out of range")
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 99,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 99,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -541,11 +597,13 @@ class TestHandleModifyLineupErrorHandling:
         mock_espn_client.get_roster.side_effect = AttributeError("object has no attribute")
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -553,16 +611,20 @@ class TestHandleModifyLineupErrorHandling:
 
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
-    async def test_generic_exception_prefixes_message(self, mock_client_class, mock_espn_client, mock_env_vars):
+    async def test_generic_exception_prefixes_message(
+        self, mock_client_class, mock_espn_client, mock_env_vars
+    ):
         """Test that unexpected exceptions return failure with 'Failed to modify lineup' prefix."""
         mock_espn_client.get_roster.side_effect = RuntimeError("unexpected error")
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -577,11 +639,13 @@ class TestHandleModifyLineupErrorHandling:
         mock_espn_client.get_roster.side_effect = KeyError("missing_key")
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -593,11 +657,13 @@ class TestHandleModifyLineupErrorHandling:
         """Test that ValueError raised inside the try block (e.g., from ESPNClient) is caught."""
         mock_client_class.side_effect = ValueError("invalid configuration")
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -615,12 +681,14 @@ class TestHandleModifyLineupErrorHandling:
         mock_espn_client.modify_lineup.side_effect = ConnectionError("ESPN API rejected request")
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-            "confirm": True,
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+                "confirm": True,
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is False
@@ -639,15 +707,18 @@ class TestHandleModifyLineupDefaults:
     ):
         """Test that league_id defaults to the configured value when not provided."""
         import espn_fantasy_mcp.tools.roster_tools as rt
+
         monkeypatch.setattr(rt.Config, "ESPN_LEAGUE_ID", "123456")
 
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -663,11 +734,13 @@ class TestHandleModifyLineupDefaults:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         assert mock_client_class.call_args.kwargs["season_year"] == 2024
 
@@ -681,11 +754,13 @@ class TestHandleModifyLineupDefaults:
         mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response.get("preview") is True
@@ -699,16 +774,16 @@ class TestHandleModifyLineupDefaults:
     ):
         """Test that slot IDs absent from POSITION_MAP fall back to their string representation."""
         # slot 999 is not in MOCK_POSITION_MAP, so from_slot_name should be "999"
-        mock_espn_client.get_roster.return_value = [
-            mock_player(player_id=111, lineup_slot="999")
-        ]
+        mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="999")]
         mock_client_class.return_value = mock_espn_client
 
-        result = await roster_tools.handle_modify_lineup({
-            "league_id": "123456",
-            "team_id": 0,
-            "moves": [{"player_id": 111, "from_slot": 999, "to_slot": 0}],
-        })
+        result = await roster_tools.handle_modify_lineup(
+            {
+                "league_id": "123456",
+                "team_id": 1,
+                "moves": [{"player_id": 111, "from_slot": 999, "to_slot": 0}],
+            }
+        )
 
         response = json.loads(result)
         assert response["success"] is True

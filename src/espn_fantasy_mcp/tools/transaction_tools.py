@@ -25,7 +25,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Team ID (0-based index). If omitted, returns all pending transactions league-wide.",
+                        "description": "Team ID (1-based index). If omitted, returns all pending transactions league-wide.",
                     },
                     "season_year": {
                         "type": "integer",
@@ -52,7 +52,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Team ID (0-based index)",
+                        "description": "Team ID (1-based index)",
                     },
                     "add_player_id": {
                         "type": "integer",
@@ -98,7 +98,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Team ID (0-based index)",
+                        "description": "Team ID (1-based index)",
                     },
                     "player_id": {
                         "type": "integer",
@@ -142,7 +142,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Team ID (0-based index)",
+                        "description": "Team ID (1-based index)",
                     },
                     "add_player_id": {
                         "type": "integer",
@@ -193,11 +193,11 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Your team ID (0-based index)",
+                        "description": "Your team ID (1-based index)",
                     },
                     "receiving_team_id": {
                         "type": "integer",
-                        "description": "The other team's ID (0-based index)",
+                        "description": "The other team's ID (1-based index)",
                     },
                     "send_player_ids": {
                         "type": "array",
@@ -259,7 +259,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Your team ID (0-based index)",
+                        "description": "Your team ID (1-based index)",
                     },
                     "transaction_id": {
                         "type": "string",
@@ -302,7 +302,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Your team ID (0-based index)",
+                        "description": "Your team ID (1-based index)",
                     },
                     "transaction_id": {
                         "type": "string",
@@ -343,7 +343,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Your team ID (0-based index)",
+                        "description": "Your team ID (1-based index)",
                     },
                     "transaction_id": {
                         "type": "string",
@@ -389,7 +389,7 @@ def get_tools() -> list[Tool]:
                     },
                     "team_id": {
                         "type": "integer",
-                        "description": "Team ID (0-based index)",
+                        "description": "Team ID (1-based index)",
                     },
                     "transaction_id": {
                         "type": "string",

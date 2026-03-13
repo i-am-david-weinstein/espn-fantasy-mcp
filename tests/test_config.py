@@ -1,4 +1,5 @@
 """Unit tests for configuration."""
+
 import pytest
 from espn_fantasy_mcp.config import Config
 
@@ -14,13 +15,13 @@ class TestConfig:
         monkeypatch.setattr("espn_fantasy_mcp.config.Config.ESPN_SWID", "{TEST-SWID-1234}")
         monkeypatch.setattr("espn_fantasy_mcp.config.Config.ESPN_LEAGUE_ID", "123456")
         monkeypatch.setattr("espn_fantasy_mcp.config.Config.ESPN_SEASON_YEAR", 2024)
-        monkeypatch.setattr("espn_fantasy_mcp.config.Config.ESPN_TEAM_ID", "0")
+        monkeypatch.setattr("espn_fantasy_mcp.config.Config.ESPN_TEAM_ID", "1")
 
         assert Config.ESPN_S2 == "test_espn_s2_token"
         assert Config.ESPN_SWID == "{TEST-SWID-1234}"
         assert Config.ESPN_LEAGUE_ID == "123456"
         assert Config.ESPN_SEASON_YEAR == 2024
-        assert Config.ESPN_TEAM_ID == "0"
+        assert Config.ESPN_TEAM_ID == "1"
 
     def test_has_auth_with_credentials(self, monkeypatch):
         """Test has_auth returns True when credentials are set."""
@@ -73,9 +74,9 @@ class TestConfig:
 
     def test_get_default_team_id(self, monkeypatch):
         """Test get_default_team_id returns team ID."""
-        monkeypatch.setattr("espn_fantasy_mcp.config.Config.ESPN_TEAM_ID", "0")
+        monkeypatch.setattr("espn_fantasy_mcp.config.Config.ESPN_TEAM_ID", "1")
 
-        assert Config.get_default_team_id() == "0"
+        assert Config.get_default_team_id() == "1"
 
     def test_get_default_team_id_not_set(self, monkeypatch):
         """Test get_default_team_id returns None when not set."""

@@ -1,4 +1,5 @@
 """Tests for league tools."""
+
 import pytest
 import json
 from unittest.mock import patch, Mock
@@ -25,7 +26,7 @@ class TestLeagueTools:
             await league_tools.handle_tool("unknown_tool", {})
 
     @pytest.mark.asyncio
-    @patch('espn_fantasy_mcp.tools.league_tools.ESPNClient')
+    @patch("espn_fantasy_mcp.tools.league_tools.ESPNClient")
     async def test_handle_get_league_settings_success(
         self, mock_client_class, mock_env_vars, sample_league_settings
     ):
@@ -35,10 +36,9 @@ class TestLeagueTools:
         mock_client.get_league_settings.return_value = mock_settings
         mock_client_class.return_value = mock_client
 
-        result = await league_tools.handle_get_league_settings({
-            "league_id": "123456",
-            "season_year": 2024
-        })
+        result = await league_tools.handle_get_league_settings(
+            {"league_id": "123456", "season_year": 2024}
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -49,14 +49,15 @@ class TestLeagueTools:
     async def test_handle_get_league_settings_missing_league_id(self, monkeypatch):
         """Test handle_get_league_settings without league_id."""
         from espn_fantasy_mcp.config import Config
+
         monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await league_tools.handle_get_league_settings({})
 
     @pytest.mark.asyncio
-    @patch('espn_fantasy_mcp.tools.league_tools.Config')
-    @patch('espn_fantasy_mcp.tools.league_tools.ESPNClient')
+    @patch("espn_fantasy_mcp.tools.league_tools.Config")
+    @patch("espn_fantasy_mcp.tools.league_tools.ESPNClient")
     async def test_handle_get_league_settings_uses_defaults(
         self, mock_client_class, mock_config, sample_league_settings
     ):
@@ -84,7 +85,7 @@ class TestLeagueTools:
         assert call_args["league_id"] == "123456"
 
     @pytest.mark.asyncio
-    @patch('espn_fantasy_mcp.tools.league_tools.ESPNClient')
+    @patch("espn_fantasy_mcp.tools.league_tools.ESPNClient")
     async def test_handle_get_league_settings_error(self, mock_client_class, mock_env_vars):
         """Test handle_get_league_settings with error."""
         # Mock the client instance and make the method raise an exception
@@ -92,9 +93,7 @@ class TestLeagueTools:
         mock_client.get_league_settings.side_effect = ConnectionError("API connection failed")
         mock_client_class.return_value = mock_client
 
-        result = await league_tools.handle_get_league_settings({
-            "league_id": "123456"
-        })
+        result = await league_tools.handle_get_league_settings({"league_id": "123456"})
 
         response = json.loads(result)
         assert response["success"] is False
@@ -102,39 +101,38 @@ class TestLeagueTools:
         assert "API connection failed" in response["message"]
 
     @pytest.mark.asyncio
-    @patch('espn_fantasy_mcp.tools.league_tools.ESPNClient')
+    @patch("espn_fantasy_mcp.tools.league_tools.ESPNClient")
     async def test_handle_get_standings_success(self, mock_client_class, mock_env_vars):
         """Test handle_get_standings with successful response."""
         mock_client = Mock()
         mock_teams = [
             Team(
-                team_id=0,
+                team_id=1,
                 team_name="Team A",
                 team_abbrev="TMA",
                 owners=["Owner A"],
                 primary_owner="Owner A",
                 wins=15,
                 losses=5,
-                standing=1
+                standing=1,
             ),
             Team(
-                team_id=1,
+                team_id=2,
                 team_name="Team B",
                 team_abbrev="TMB",
                 owners=["Owner B"],
                 primary_owner="Owner B",
                 wins=10,
                 losses=10,
-                standing=2
+                standing=2,
             ),
         ]
         mock_client.get_standings.return_value = mock_teams
         mock_client_class.return_value = mock_client
 
-        result = await league_tools.handle_get_standings({
-            "league_id": "123456",
-            "season_year": 2024
-        })
+        result = await league_tools.handle_get_standings(
+            {"league_id": "123456", "season_year": 2024}
+        )
 
         response = json.loads(result)
         assert response["success"] is True
@@ -146,14 +144,15 @@ class TestLeagueTools:
     async def test_handle_get_standings_missing_league_id(self, monkeypatch):
         """Test handle_get_standings without league_id."""
         from espn_fantasy_mcp.config import Config
+
         monkeypatch.setattr(Config, "ESPN_LEAGUE_ID", None)
 
         with pytest.raises(ValueError, match="league_id is required"):
             await league_tools.handle_get_standings({})
 
     @pytest.mark.asyncio
-    @patch('espn_fantasy_mcp.tools.league_tools.Config')
-    @patch('espn_fantasy_mcp.tools.league_tools.ESPNClient')
+    @patch("espn_fantasy_mcp.tools.league_tools.Config")
+    @patch("espn_fantasy_mcp.tools.league_tools.ESPNClient")
     async def test_handle_get_standings_uses_defaults(self, mock_client_class, mock_config):
         """Test handle_get_standings uses default values from config."""
         # Mock Config methods
@@ -178,23 +177,21 @@ class TestLeagueTools:
         assert call_args["league_id"] == "123456"
 
     @pytest.mark.asyncio
-    @patch('espn_fantasy_mcp.tools.league_tools.ESPNClient')
+    @patch("espn_fantasy_mcp.tools.league_tools.ESPNClient")
     async def test_handle_get_standings_empty(self, mock_client_class, mock_env_vars):
         """Test handle_get_standings with no teams."""
         mock_client = Mock()
         mock_client.get_standings.return_value = []
         mock_client_class.return_value = mock_client
 
-        result = await league_tools.handle_get_standings({
-            "league_id": "123456"
-        })
+        result = await league_tools.handle_get_standings({"league_id": "123456"})
 
         response = json.loads(result)
         assert response["success"] is True
         assert response["data"] == []
 
     @pytest.mark.asyncio
-    @patch('espn_fantasy_mcp.tools.league_tools.ESPNClient')
+    @patch("espn_fantasy_mcp.tools.league_tools.ESPNClient")
     async def test_handle_get_standings_error(self, mock_client_class, mock_env_vars):
         """Test handle_get_standings with error."""
         # Mock the client instance and make the method raise an exception
@@ -202,9 +199,7 @@ class TestLeagueTools:
         mock_client.get_standings.side_effect = ValueError("Invalid league ID")
         mock_client_class.return_value = mock_client
 
-        result = await league_tools.handle_get_standings({
-            "league_id": "invalid"
-        })
+        result = await league_tools.handle_get_standings({"league_id": "invalid"})
 
         response = json.loads(result)
         assert response["success"] is False

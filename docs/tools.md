@@ -33,7 +33,7 @@ Get information about a specific team.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Team ID (0-based index) |
+| `team_id` | **Yes** | Team ID |
 | `league_id` | No | ESPN League ID |
 | `season_year` | No | Season year |
 
@@ -42,7 +42,7 @@ Get the current roster for a team with player details and lineup positions.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Team ID (0-based index) |
+| `team_id` | **Yes** | Team ID |
 | `league_id` | No | ESPN League ID |
 | `season_year` | No | Season year |
 
@@ -80,7 +80,7 @@ Move players between lineup slots. Validates all moves before executing; returns
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Team ID (0-based index) |
+| `team_id` | **Yes** | Team ID |
 | `moves` | **Yes** | List of moves, each with `player_id`, `from_slot`, `to_slot` |
 | `confirm` | No | `false` (default) previews; `true` executes |
 | `scoring_period_id` | No | Scoring period (defaults to current) |
@@ -105,7 +105,7 @@ Add a free agent directly to your team, bypassing waivers. If your roster is ful
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Team ID (0-based index) |
+| `team_id` | **Yes** | Team ID |
 | `add_player_id` | **Yes** | ESPN player ID to add |
 | `drop_player_id` | No | ESPN player ID to drop (required if roster is full) |
 | `confirm` | No | `false` previews; `true` executes |
@@ -118,7 +118,7 @@ Drop a player from your team.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Team ID (0-based index) |
+| `team_id` | **Yes** | Team ID |
 | `player_id` | **Yes** | ESPN player ID to drop |
 | `confirm` | No | `false` previews; `true` executes |
 | `scoring_period_id` | No | Scoring period (defaults to current) |
@@ -130,7 +130,7 @@ Submit a waiver claim with an optional FAAB bid. Claims are queued and processed
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Team ID (0-based index) |
+| `team_id` | **Yes** | Team ID |
 | `add_player_id` | **Yes** | ESPN player ID to claim |
 | `drop_player_id` | No | ESPN player ID to drop (required if roster is full) |
 | `bid_amount` | No | FAAB bid amount (default: 0) |
@@ -144,7 +144,7 @@ Cancel a pending waiver claim. Requires the transaction ID from the original cla
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Team ID (0-based index) |
+| `team_id` | **Yes** | Team ID |
 | `transaction_id` | **Yes** | Transaction ID from the original waiver claim |
 | `confirm` | No | `false` previews; `true` cancels |
 | `scoring_period_id` | No | Scoring period (defaults to current) |
@@ -156,7 +156,7 @@ Propose a trade with another team. Returns a transaction ID that can be used wit
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Your team ID (0-based index) |
+| `team_id` | **Yes** | Your team ID |
 | `receiving_team_id` | **Yes** | The other team's ID |
 | `send_player_ids` | **Yes** | List of player IDs you are sending |
 | `receive_player_ids` | **Yes** | List of player IDs you want to receive |
@@ -172,7 +172,7 @@ Cancel a pending trade proposal you sent.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Your team ID (0-based index) |
+| `team_id` | **Yes** | Your team ID |
 | `transaction_id` | **Yes** | Transaction ID from the original proposal |
 | `confirm` | No | `false` previews; `true` cancels |
 | `scoring_period_id` | No | Scoring period (defaults to current) |
@@ -184,7 +184,7 @@ Accept a pending trade offer from another team.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Your team ID (0-based index) |
+| `team_id` | **Yes** | Your team ID |
 | `transaction_id` | **Yes** | Transaction ID of the trade proposal |
 | `confirm` | No | `false` previews; `true` accepts |
 | `scoring_period_id` | No | Scoring period (defaults to current) |
@@ -196,7 +196,7 @@ Decline a trade offer from another team.
 
 | Parameter | Required | Description |
 |-----------|----------|-------------|
-| `team_id` | **Yes** | Your team ID (0-based index) |
+| `team_id` | **Yes** | Your team ID |
 | `transaction_id` | **Yes** | Transaction ID of the trade proposal |
 | `comment` | No | Reason for declining |
 | `confirm` | No | `false` previews; `true` declines |

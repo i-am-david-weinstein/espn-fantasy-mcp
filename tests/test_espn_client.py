@@ -1,4 +1,5 @@
 """Unit tests for ESPN client."""
+
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from espn_fantasy_mcp.espn_client import ESPNClient
@@ -9,17 +10,14 @@ from espn_fantasy_mcp.models import RosterStatus
 class TestESPNClient:
     """Tests for ESPNClient class."""
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_client_initialization(self, mock_league_class, mock_env_vars):
         """Test ESPNClient initialization."""
         mock_league = Mock()
         mock_league_class.return_value = mock_league
 
         client = ESPNClient(
-            league_id="123456",
-            season_year=2024,
-            espn_s2="test_s2",
-            swid="{TEST-SWID}"
+            league_id="123456", season_year=2024, espn_s2="test_s2", swid="{TEST-SWID}"
         )
 
         assert client.league_id == 123456
@@ -28,7 +26,7 @@ class TestESPNClient:
         assert client.swid == "{TEST-SWID}"
         mock_league_class.assert_called_once()
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_team(self, mock_league_class, mock_espn_team):
         """Test getting a team."""
         mock_league = Mock()
@@ -36,15 +34,15 @@ class TestESPNClient:
         mock_league_class.return_value = mock_league
 
         client = ESPNClient(league_id="123456")
-        team = client.get_team(0)
+        team = client.get_team(1)
 
-        assert team.team_id == 0
+        assert team.team_id == 1
         assert team.team_name == "Test Team"
         assert team.team_abbrev == "TEST"
         assert team.wins == 10
         assert team.losses == 5
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_standings(self, mock_league_class, mock_espn_team):
         """Test getting league standings."""
         mock_team_1 = Mock()
@@ -76,7 +74,7 @@ class TestESPNClient:
         assert standings[1].team_name == "Team B"
         assert standings[1].standing == 2
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_roster(self, mock_league_class, mock_espn_team, mock_espn_player):
         """Test getting a team roster."""
         mock_espn_team.roster = [mock_espn_player]
@@ -86,15 +84,15 @@ class TestESPNClient:
         mock_league_class.return_value = mock_league
 
         client = ESPNClient(league_id="123456")
-        roster = client.get_roster(0)
+        roster = client.get_roster(1)
 
         assert len(roster) == 1
         assert roster[0].name == "Test Player"
         assert roster[0].roster_status == RosterStatus.ROSTERED
-        assert roster[0].fantasy_team_id == 0
+        assert roster[0].fantasy_team_id == 1
         assert roster[0].fantasy_team_name == "Test Team"
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_free_agents(self, mock_league_class, mock_espn_player):
         """Test getting free agents."""
         # Create a free agent player (not rostered)
@@ -120,7 +118,7 @@ class TestESPNClient:
         assert free_agents[0].roster_status == RosterStatus.FREE_AGENT
         assert free_agents[0].fantasy_team_id is None
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_free_agents_with_position_filter(self, mock_league_class):
         """Test getting free agents with position filter."""
         mock_league = Mock()
@@ -132,7 +130,7 @@ class TestESPNClient:
 
         mock_league.free_agents.assert_called_once_with(size=20, position="SS")
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_player_by_name_exact_match(self, mock_league_class, mock_espn_player):
         """Test getting a player by exact name match."""
         mock_league = Mock()
@@ -150,7 +148,7 @@ class TestESPNClient:
         assert player.name == "Test Player"
         assert len(suggestions) == 0
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_player_by_name_fuzzy_match(self, mock_league_class):
         """Test getting a player by fuzzy name match.
 
@@ -165,7 +163,7 @@ class TestESPNClient:
             "Shohei Ohtani": 39572,
             30836: "Aaron Judge",
             31000: "Mike Trout",
-            39572: "Shohei Ohtani"
+            39572: "Shohei Ohtani",
         }
         mock_league_class.return_value = mock_league
 
@@ -184,7 +182,7 @@ class TestESPNClient:
             f"Got suggestions: {suggestions}"
         )
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_player_by_name_no_match(self, mock_league_class):
         """Test getting a player with no match.
 
@@ -202,11 +200,11 @@ class TestESPNClient:
         assert player is None
         # Should not suggest "Aaron Judge" for "Nonexistent Player"
         # These strings have low similarity and shouldn't meet the 90% threshold
-        assert "Aaron Judge" not in suggestions, (
-            "Should not suggest 'Aaron Judge' for completely different name 'Nonexistent Player'"
-        )
+        assert (
+            "Aaron Judge" not in suggestions
+        ), "Should not suggest 'Aaron Judge' for completely different name 'Nonexistent Player'"
 
-    @patch('espn_fantasy_mcp.espn_client.League')
+    @patch("espn_fantasy_mcp.espn_client.League")
     def test_get_player_by_name_fuzzy_disabled(self, mock_league_class):
         """Test getting a player with fuzzy matching disabled.
 
@@ -214,10 +212,7 @@ class TestESPNClient:
         even for close typos.
         """
         mock_league = Mock()
-        mock_league.player_map = {
-            "Aaron Judge": 30836,
-            30836: "Aaron Judge"
-        }
+        mock_league.player_map = {"Aaron Judge": 30836, 30836: "Aaron Judge"}
         mock_league_class.return_value = mock_league
 
         client = ESPNClient(league_id="123456")
@@ -226,6 +221,4 @@ class TestESPNClient:
 
         assert player is None
         # With fuzzy matching disabled, should not provide any suggestions
-        assert len(suggestions) == 0, (
-            "Should not provide suggestions when fuzzy_match=False"
-        )
+        assert len(suggestions) == 0, "Should not provide suggestions when fuzzy_match=False"
