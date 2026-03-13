@@ -1,5 +1,9 @@
 # ESPN Fantasy MCP Server
 
+[![Tests](https://github.com/i-am-david-weinstein/espn-fantasy-mcp/actions/workflows/test.yml/badge.svg)](https://github.com/i-am-david-weinstein/espn-fantasy-mcp/actions/workflows/test.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 MCP (Model Context Protocol) server providing access to ESPN Fantasy Baseball data, for use with Claude Code and other MCP clients.
 
 ## Features
