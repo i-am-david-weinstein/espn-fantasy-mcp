@@ -1,85 +1,9 @@
 """Roster management MCP tools."""
 
 import json
-from mcp.types import Tool
 from espn_api.baseball.constant import POSITION_MAP
 from espn_fantasy_mcp.espn_client import ESPNClient
 from espn_fantasy_mcp.config import Config
-
-
-def get_tools() -> list[Tool]:
-    """Return roster management tools."""
-    return [
-        Tool(
-            name="modify_lineup",
-            description=(
-                "Modify team lineup by moving players between lineup slots. "
-                "Uses a confirmation pattern: first call (confirm=false) previews the changes, "
-                "second call (confirm=true) executes them. "
-                "Can move a single player or swap multiple players in one transaction."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "league_id": {
-                        "type": "string",
-                        "description": "ESPN League ID (defaults to configured league)",
-                    },
-                    "team_id": {
-                        "type": "integer",
-                        "description": "Team ID (1-based index)",
-                    },
-                    "moves": {
-                        "type": "array",
-                        "description": "List of lineup moves to make",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "player_id": {
-                                    "type": "integer",
-                                    "description": "ESPN player ID",
-                                },
-                                "from_slot": {
-                                    "type": "integer",
-                                    "description": "Current lineup slot ID",
-                                },
-                                "to_slot": {
-                                    "type": "integer",
-                                    "description": "Target lineup slot ID",
-                                },
-                            },
-                            "required": ["player_id", "from_slot", "to_slot"],
-                        },
-                    },
-                    "scoring_period_id": {
-                        "type": "integer",
-                        "description": "Scoring period (week) for changes (defaults to current period)",
-                    },
-                    "season_year": {
-                        "type": "integer",
-                        "description": "Season year (defaults to current year)",
-                    },
-                    "confirm": {
-                        "type": "boolean",
-                        "description": (
-                            "If false (default), returns a preview of changes. "
-                            "If true, executes the lineup changes."
-                        ),
-                        "default": False,
-                    },
-                },
-                "required": ["team_id", "moves"],
-            },
-        ),
-    ]
-
-
-async def handle_tool(name: str, arguments: dict) -> str:
-    """Handle roster tool calls."""
-    if name == "modify_lineup":
-        return await handle_modify_lineup(arguments)
-    else:
-        raise ValueError(f"Unknown tool: {name}")
 
 
 async def handle_modify_lineup(arguments: dict) -> str:

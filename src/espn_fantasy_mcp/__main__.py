@@ -1,6 +1,5 @@
 """Entry point for ESPN Fantasy MCP server."""
 
-import asyncio
 import logging
 
 
@@ -12,7 +11,7 @@ def main():
         level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    asyncio.run(server_main())
+    server_main()
 
 
 if __name__ == "__main__":

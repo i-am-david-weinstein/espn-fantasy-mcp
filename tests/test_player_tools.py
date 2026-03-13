@@ -11,20 +11,6 @@ from espn_fantasy_mcp.models import Player, RosterStatus
 class TestPlayerTools:
     """Tests for player tool functions."""
 
-    def test_get_tools(self):
-        """Test that get_tools returns correct tool definitions."""
-        tools = player_tools.get_tools()
-
-        assert len(tools) == 2
-        assert tools[0].name == "get_free_agents"
-        assert tools[1].name == "get_player_info"
-
-    @pytest.mark.asyncio
-    async def test_handle_tool_unknown(self):
-        """Test handle_tool with unknown tool name."""
-        with pytest.raises(ValueError, match="Unknown tool"):
-            await player_tools.handle_tool("unknown_tool", {})
-
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.player_tools.ESPNClient")
     async def test_handle_get_free_agents_success(self, mock_client_class, mock_env_vars):

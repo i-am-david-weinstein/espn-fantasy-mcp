@@ -5,75 +5,8 @@ import json
 from unittest.mock import patch, Mock
 from espn_fantasy_mcp.tools import roster_tools
 
-
 # Stable slot ID -> name mapping used across roster tool tests
 MOCK_POSITION_MAP = {0: "C", 2: "1B", 16: "BE", 17: "IL"}
-
-
-@pytest.mark.unit
-class TestRosterToolsGetTools:
-    """Tests for get_tools function."""
-
-    def test_get_tools_returns_one_tool(self):
-        """Test that get_tools returns exactly one tool."""
-        tools = roster_tools.get_tools()
-        assert len(tools) == 1
-
-    def test_get_tools_modify_lineup_name(self):
-        """Test that the returned tool is named modify_lineup."""
-        tools = roster_tools.get_tools()
-        assert tools[0].name == "modify_lineup"
-
-    def test_get_tools_schema_required_fields(self):
-        """Test that modify_lineup schema has required fields."""
-        tools = roster_tools.get_tools()
-        schema = tools[0].inputSchema
-        assert "team_id" in schema["required"]
-        assert "moves" in schema["required"]
-
-    def test_get_tools_schema_moves_is_array(self):
-        """Test that modify_lineup schema defines moves as an array."""
-        tools = roster_tools.get_tools()
-        assert tools[0].inputSchema["properties"]["moves"]["type"] == "array"
-
-    def test_get_tools_schema_confirm_defaults_to_false(self):
-        """Test that modify_lineup schema includes confirm field defaulting to False."""
-        tools = roster_tools.get_tools()
-        assert tools[0].inputSchema["properties"]["confirm"]["default"] is False
-
-
-@pytest.mark.unit
-class TestRosterToolsHandleTool:
-    """Tests for handle_tool dispatch function."""
-
-    @pytest.mark.asyncio
-    async def test_handle_tool_unknown_raises(self):
-        """Test handle_tool with unknown tool name raises ValueError."""
-        with pytest.raises(ValueError, match="Unknown tool"):
-            await roster_tools.handle_tool("unknown_tool", {})
-
-    @pytest.mark.asyncio
-    @patch("espn_fantasy_mcp.tools.roster_tools.ESPNClient")
-    @patch("espn_fantasy_mcp.tools.roster_tools.POSITION_MAP", MOCK_POSITION_MAP)
-    async def test_handle_tool_dispatches_modify_lineup(
-        self, mock_client_class, mock_espn_client, mock_player, mock_env_vars
-    ):
-        """Test that handle_tool routes modify_lineup to the correct handler."""
-        mock_espn_client.get_roster.return_value = [mock_player(player_id=111, lineup_slot="BE")]
-        mock_client_class.return_value = mock_espn_client
-
-        result = await roster_tools.handle_tool(
-            "modify_lineup",
-            {
-                "league_id": "123456",
-                "team_id": 1,
-                "moves": [{"player_id": 111, "from_slot": 16, "to_slot": 0}],
-            },
-        )
-
-        response = json.loads(result)
-        assert response["success"] is True
-        assert response["preview"] is True
 
 
 @pytest.mark.unit
