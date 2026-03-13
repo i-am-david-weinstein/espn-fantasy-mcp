@@ -1,69 +1,8 @@
 """Team-related MCP tools."""
 
 import json
-from mcp.types import Tool
 from espn_fantasy_mcp.espn_client import ESPNClient
 from espn_fantasy_mcp.config import Config
-
-
-def get_tools() -> list[Tool]:
-    """Return team-related tools."""
-    return [
-        Tool(
-            name="get_team",
-            description="Get detailed information about a specific team",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "league_id": {
-                        "type": "string",
-                        "description": "ESPN League ID",
-                    },
-                    "team_id": {
-                        "type": "integer",
-                        "description": "Team ID (1-based index)",
-                    },
-                    "season_year": {
-                        "type": "integer",
-                        "description": "Season year (defaults to current year)",
-                    },
-                },
-                "required": ["team_id"],
-            },
-        ),
-        Tool(
-            name="get_roster",
-            description="Get current roster for a team with player details and lineup positions",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "league_id": {
-                        "type": "string",
-                        "description": "ESPN League ID",
-                    },
-                    "team_id": {
-                        "type": "integer",
-                        "description": "Team ID (1-based index)",
-                    },
-                    "season_year": {
-                        "type": "integer",
-                        "description": "Season year (defaults to current year)",
-                    },
-                },
-                "required": ["team_id"],
-            },
-        ),
-    ]
-
-
-async def handle_tool(name: str, arguments: dict) -> str:
-    """Handle team tool calls."""
-    if name == "get_team":
-        return await handle_get_team(arguments)
-    elif name == "get_roster":
-        return await handle_get_roster(arguments)
-    else:
-        raise ValueError(f"Unknown tool: {name}")
 
 
 async def handle_get_team(arguments: dict) -> str:

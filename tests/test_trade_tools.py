@@ -2,7 +2,7 @@
 
 import json
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from espn_fantasy_mcp.tools import transaction_tools
 
 
@@ -109,36 +109,6 @@ def _make_espn_client(
         ],
     }
     return client
-
-
-# ---------------------------------------------------------------------------
-# propose_trade – tool schema
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.unit
-class TestProposeTradeToolSchema:
-    def test_tool_is_registered(self):
-        names = [t.name for t in transaction_tools.get_tools()]
-        assert "propose_trade" in names
-
-    def test_required_fields(self):
-        tool = next(t for t in transaction_tools.get_tools() if t.name == "propose_trade")
-        required = tool.inputSchema["required"]
-        assert "team_id" in required
-        assert "receiving_team_id" in required
-        assert "send_player_ids" in required
-        assert "receive_player_ids" in required
-
-    def test_confirm_defaults_to_false(self):
-        tool = next(t for t in transaction_tools.get_tools() if t.name == "propose_trade")
-        assert tool.inputSchema["properties"]["confirm"]["default"] is False
-
-    def test_send_receive_player_ids_are_arrays(self):
-        tool = next(t for t in transaction_tools.get_tools() if t.name == "propose_trade")
-        props = tool.inputSchema["properties"]
-        assert props["send_player_ids"]["type"] == "array"
-        assert props["receive_player_ids"]["type"] == "array"
 
 
 # ---------------------------------------------------------------------------
@@ -425,18 +395,6 @@ class TestProposeTradeExecute:
 
 
 @pytest.mark.unit
-class TestCancelTradeToolSchema:
-    def test_tool_is_registered(self):
-        names = [t.name for t in transaction_tools.get_tools()]
-        assert "cancel_trade" in names
-
-    def test_required_fields(self):
-        tool = next(t for t in transaction_tools.get_tools() if t.name == "cancel_trade")
-        assert "team_id" in tool.inputSchema["required"]
-        assert "transaction_id" in tool.inputSchema["required"]
-
-
-@pytest.mark.unit
 class TestCancelTradePreview:
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
@@ -545,18 +503,6 @@ class TestCancelTradeExecute:
 
 
 @pytest.mark.unit
-class TestAcceptTradeToolSchema:
-    def test_tool_is_registered(self):
-        names = [t.name for t in transaction_tools.get_tools()]
-        assert "accept_trade" in names
-
-    def test_required_fields(self):
-        tool = next(t for t in transaction_tools.get_tools() if t.name == "accept_trade")
-        assert "team_id" in tool.inputSchema["required"]
-        assert "transaction_id" in tool.inputSchema["required"]
-
-
-@pytest.mark.unit
 class TestAcceptTradePreview:
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
@@ -648,18 +594,6 @@ class TestAcceptTradeExecute:
 # ---------------------------------------------------------------------------
 # decline_trade – schema, preview, execute
 # ---------------------------------------------------------------------------
-
-
-@pytest.mark.unit
-class TestDeclineTradeToolSchema:
-    def test_tool_is_registered(self):
-        names = [t.name for t in transaction_tools.get_tools()]
-        assert "decline_trade" in names
-
-    def test_required_fields(self):
-        tool = next(t for t in transaction_tools.get_tools() if t.name == "decline_trade")
-        assert "team_id" in tool.inputSchema["required"]
-        assert "transaction_id" in tool.inputSchema["required"]
 
 
 @pytest.mark.unit
@@ -765,72 +699,6 @@ class TestDeclineTradeExecute:
         assert response["success"] is True
         assert response["executed"] is True
         assert response["status"] == "EXECUTED"
-
-
-# ---------------------------------------------------------------------------
-# handle_tool dispatch
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.unit
-class TestTradeHandleToolDispatch:
-    @pytest.mark.asyncio
-    async def test_dispatch_propose_trade(self, mock_env_vars):
-        with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
-            mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool(
-                "propose_trade",
-                {
-                    "league_id": "123456",
-                    "team_id": 1,
-                    "receiving_team_id": 2,
-                    "send_player_ids": [100],
-                    "receive_player_ids": [200],
-                },
-            )
-        assert json.loads(result)["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_dispatch_cancel_trade(self, mock_env_vars):
-        with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
-            mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool(
-                "cancel_trade",
-                {
-                    "league_id": "123456",
-                    "team_id": 1,
-                    "transaction_id": "trade-proposal-abc",
-                },
-            )
-        assert json.loads(result)["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_dispatch_accept_trade(self, mock_env_vars):
-        with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
-            mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool(
-                "accept_trade",
-                {
-                    "league_id": "123456",
-                    "team_id": 1,
-                    "transaction_id": "trade-proposal-abc",
-                },
-            )
-        assert json.loads(result)["success"] is True
-
-    @pytest.mark.asyncio
-    async def test_dispatch_decline_trade(self, mock_env_vars):
-        with patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient") as mc:
-            mc.return_value = _make_espn_client()
-            result = await transaction_tools.handle_tool(
-                "decline_trade",
-                {
-                    "league_id": "123456",
-                    "team_id": 1,
-                    "transaction_id": "trade-proposal-abc",
-                },
-            )
-        assert json.loads(result)["success"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -1150,16 +1018,6 @@ class TestGetPendingTransactionsESPNClient:
 
 @pytest.mark.unit
 class TestGetPendingTransactionsTool:
-    def test_tool_is_registered(self):
-        names = [t.name for t in transaction_tools.get_tools()]
-        assert "get_pending_transactions" in names
-
-    def test_team_id_not_required(self):
-        tool = next(
-            t for t in transaction_tools.get_tools() if t.name == "get_pending_transactions"
-        )
-        assert tool.inputSchema.get("required", []) == []
-
     @pytest.mark.asyncio
     @patch("espn_fantasy_mcp.tools.transaction_tools.ESPNClient")
     async def test_returns_waiver_and_trade_counts(self, mock_client_class, mock_env_vars):

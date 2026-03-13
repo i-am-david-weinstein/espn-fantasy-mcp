@@ -1,61 +1,8 @@
 """League-related MCP tools."""
 
 import json
-from mcp.types import Tool
 from espn_fantasy_mcp.espn_client import ESPNClient
 from espn_fantasy_mcp.config import Config
-
-
-def get_tools() -> list[Tool]:
-    """Return league-related tools."""
-    return [
-        Tool(
-            name="get_league_settings",
-            description="Get league configuration including scoring categories, roster settings, and league rules",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "league_id": {
-                        "type": "string",
-                        "description": "ESPN League ID (found in league URL)",
-                    },
-                    "season_year": {
-                        "type": "integer",
-                        "description": "Season year (defaults to current year if not specified)",
-                    },
-                },
-                "required": [],
-            },
-        ),
-        Tool(
-            name="get_standings",
-            description="Get current league standings with team records and rankings",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "league_id": {
-                        "type": "string",
-                        "description": "ESPN League ID",
-                    },
-                    "season_year": {
-                        "type": "integer",
-                        "description": "Season year (defaults to current year)",
-                    },
-                },
-                "required": [],
-            },
-        ),
-    ]
-
-
-async def handle_tool(name: str, arguments: dict) -> str:
-    """Handle league tool calls."""
-    if name == "get_league_settings":
-        return await handle_get_league_settings(arguments)
-    elif name == "get_standings":
-        return await handle_get_standings(arguments)
-    else:
-        raise ValueError(f"Unknown tool: {name}")
 
 
 async def handle_get_league_settings(arguments: dict) -> str:

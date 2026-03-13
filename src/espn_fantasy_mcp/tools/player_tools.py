@@ -1,73 +1,8 @@
 """Player-related MCP tools."""
 
 import json
-from mcp.types import Tool
 from espn_fantasy_mcp.espn_client import ESPNClient
 from espn_fantasy_mcp.config import Config
-
-
-def get_tools() -> list[Tool]:
-    """Return player-related tools."""
-    return [
-        Tool(
-            name="get_free_agents",
-            description="Get list of available free agents on the waiver wire",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "league_id": {
-                        "type": "string",
-                        "description": "ESPN League ID",
-                    },
-                    "season_year": {
-                        "type": "integer",
-                        "description": "Season year (defaults to current year)",
-                    },
-                    "position": {
-                        "type": "string",
-                        "description": "Filter by position (C, 1B, 2B, SS, 3B, OF, SP, RP, P)",
-                    },
-                    "size": {
-                        "type": "integer",
-                        "description": "Number of players to return (default: 50)",
-                    },
-                },
-                "required": [],
-            },
-        ),
-        Tool(
-            name="get_player_info",
-            description="Look up a player by name and get detailed information including stats, position, team, and roster status. Supports fuzzy matching for misspelled names.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "player_name": {
-                        "type": "string",
-                        "description": "Player's full name (e.g., 'Shohei Ohtani', 'Aaron Judge')",
-                    },
-                    "league_id": {
-                        "type": "string",
-                        "description": "ESPN League ID",
-                    },
-                    "season_year": {
-                        "type": "integer",
-                        "description": "Season year (defaults to current year)",
-                    },
-                },
-                "required": ["player_name"],
-            },
-        ),
-    ]
-
-
-async def handle_tool(name: str, arguments: dict) -> str:
-    """Handle player tool calls."""
-    if name == "get_free_agents":
-        return await handle_get_free_agents(arguments)
-    elif name == "get_player_info":
-        return await handle_get_player_info(arguments)
-    else:
-        raise ValueError(f"Unknown tool: {name}")
 
 
 async def handle_get_free_agents(arguments: dict) -> str:
