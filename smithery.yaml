@@ -1,0 +1,29 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - ESPN_S2
+      - ESPN_SWID
+    properties:
+      ESPN_S2:
+        type: string
+        description: ESPN authentication cookie (espn_s2). Found in browser DevTools → Application → Cookies → fantasy.espn.com.
+      ESPN_SWID:
+        type: string
+        description: ESPN SWID cookie (format: {XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}). Keep the curly braces.
+      ESPN_LEAGUE_ID:
+        type: string
+        description: Your ESPN league ID, found in the league URL. Can be provided per-tool-call if not set here.
+      ESPN_TEAM_ID:
+        type: string
+        description: Your team ID. Required for transaction tools like add/drop/trade.
+      ESPN_SEASON_YEAR:
+        type: string
+        description: Season year (e.g. 2026). Defaults to current year if not set.
+  commandFunction: |-
+    (config) => ({
+      command: "uvx",
+      args: ["espn-fantasy-mcp"],
+      env: config
+    })
