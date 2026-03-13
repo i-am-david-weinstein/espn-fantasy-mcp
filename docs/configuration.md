@@ -15,7 +15,7 @@ claude mcp add --scope user --transport stdio espn-fantasy \
   --env ESPN_LEAGUE_ID=your_league_id \
   --env ESPN_TEAM_ID=your_team_id \
   --env ESPN_SEASON_YEAR=2026 \
-  -- uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
+  -- uvx espn-fantasy-mcp
 ```
 
 ### Local scope
@@ -29,7 +29,7 @@ claude mcp add --transport stdio espn-fantasy \
   --env ESPN_LEAGUE_ID=your_league_id \
   --env ESPN_TEAM_ID=your_team_id \
   --env ESPN_SEASON_YEAR=2026 \
-  -- uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
+  -- uvx espn-fantasy-mcp
 ```
 
 ### Project scope
@@ -41,7 +41,7 @@ claude mcp add --scope project --transport stdio espn-fantasy \
   --env ESPN_LEAGUE_ID=your_league_id \
   --env ESPN_TEAM_ID=your_team_id \
   --env ESPN_SEASON_YEAR=2026 \
-  -- uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
+  -- uvx espn-fantasy-mcp
 ```
 
 ---
@@ -56,11 +56,7 @@ If you prefer to edit config files directly instead of using `claude mcp add`:
   "mcpServers": {
     "espn-fantasy": {
       "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp",
-        "espn-fantasy-mcp"
-      ],
+      "args": ["espn-fantasy-mcp"],
       "env": {
         "ESPN_S2": "your_espn_s2_cookie",
         "ESPN_SWID": "{your_espn_swid_cookie}",
@@ -79,11 +75,7 @@ If you prefer to edit config files directly instead of using `claude mcp add`:
   "mcpServers": {
     "espn-fantasy": {
       "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp",
-        "espn-fantasy-mcp"
-      ],
+      "args": ["espn-fantasy-mcp"],
       "env": {
         "ESPN_LEAGUE_ID": "your_league_id",
         "ESPN_TEAM_ID": "your_team_id",

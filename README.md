@@ -1,6 +1,7 @@
 # ESPN Fantasy MCP Server
 
 [![Tests](https://github.com/i-am-david-weinstein/espn-fantasy-mcp/actions/workflows/test.yml/badge.svg)](https://github.com/i-am-david-weinstein/espn-fantasy-mcp/actions/workflows/test.yml)
+[![PyPI](https://img.shields.io/pypi/v/espn-fantasy-mcp)](https://pypi.org/project/espn-fantasy-mcp/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -34,7 +35,7 @@ claude mcp add --scope user --transport stdio espn-fantasy \
   --env ESPN_LEAGUE_ID=your_league_id \
   --env ESPN_TEAM_ID=your_team_id \
   --env ESPN_SEASON_YEAR=2026 \
-  -- uvx --from git+https://github.com/i-am-david-weinstein/espn-fantasy-mcp espn-fantasy-mcp
+  -- uvx espn-fantasy-mcp
 ```
 
 Keep the curly braces in the SWID value. `uvx` handles installation automatically — no separate install step needed.
