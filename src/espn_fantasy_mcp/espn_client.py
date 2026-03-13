@@ -114,13 +114,13 @@ class ESPNClient:
         Example:
             # Move one player from bench (16) to starting lineup (0)
             client.modify_lineup(
-                team_id=3,  # 1-based index (4th team)
+                team_id=3,
                 moves=[{"player_id": 12345, "from_slot": 16, "to_slot": 0}]
             )
 
             # Swap two players
             client.modify_lineup(
-                team_id=3,  # 1-based index (4th team)
+                team_id=3,
                 moves=[
                     {"player_id": 12345, "from_slot": 0, "to_slot": 16},
                     {"player_id": 67890, "from_slot": 16, "to_slot": 0}
